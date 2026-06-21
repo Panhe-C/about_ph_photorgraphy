@@ -52,7 +52,7 @@ const works = getWorks();
         <div class="gallery-wrap">
           <div class="viewer-top meta">
             <span id="plateCounter">01 / {String(works[0].photos.length).padStart(2, '0')}</span>
-            <span id="plateSeries">{works[0].series}</span>
+            <span id="plateSeries">{works[0].folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
           </div>
 
           <!-- Main plate -->
@@ -112,10 +112,12 @@ const works = getWorks();
   <Footer pageLabel="Works" tagline="Six series, multiple plates" />
 </BaseLayout>
 
-<script>
-  import { getWorks } from '../data/works';
+<script type="application/json" id="worksData">
+  {JSON.stringify(works)}
+</script>
 
-  const works = getWorks();
+<script>
+  const works = JSON.parse(document.getElementById('worksData')!.textContent!);
 
   const buttons = Array.from(document.querySelectorAll('.work-button'));
   const plate = document.getElementById('plate')!;
@@ -164,7 +166,7 @@ const works = getWorks();
     plate.style.setProperty('background', `url(${photo}) center / cover no-repeat`);
     fields.counter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
     fields.title.textContent = work.title;
-    fields.series.textContent = work.series;
+    fields.series.textContent = work.folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     fields.caption.textContent = work.caption;
     fields.year.textContent = work.year;
     fields.ratio.textContent = work.ratio;
