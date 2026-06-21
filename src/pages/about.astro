@@ -1,0 +1,257 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopNav from '../components/TopNav.astro';
+import Footer from '../components/Footer.astro';
+import Plate from '../components/Plate.astro';
+---
+
+<BaseLayout
+  title="About"
+  description="P.H. works with thresholds, interior light, temporary boundaries, and objects that feel recently abandoned."
+>
+  <TopNav currentPage="about" />
+
+  <main id="content">
+    <!-- ── About Hero ── -->
+    <section class="container about-hero" data-od-id="about-hero">
+      <Plate photoSrc="/images/photos/_C002700.JPG" label="Portrait placeholder" class="portrait-plate" />
+      <div>
+        <p class="eyebrow">About</p>
+        <h1>Photographs of rooms, edges, and withheld time.</h1>
+      </div>
+    </section>
+
+    <!-- ── Statement ── -->
+    <section class="section" data-od-id="statement">
+      <div class="container grid-2col">
+        <div class="rule-block">
+          <p class="eyebrow">Statement</p>
+          <h2>No biography before the work.</h2>
+        </div>
+        <div>
+          <p class="statement-text">The images stay close to ordinary spaces until the ordinary starts to fracture.</p>
+          <p class="lead" style="margin-top: 34px;">
+            P.H. works with thresholds, interior light, temporary boundaries, and objects that feel
+            recently abandoned. The site keeps the writing spare so the pictures can hold the first
+            encounter.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice ── -->
+    <section class="section" data-od-id="practice">
+      <div class="container two-col">
+        <div class="rule-block">
+          <p class="eyebrow">Practice</p>
+          <h2>Viewing materials</h2>
+        </div>
+        <div class="line-list">
+          <div class="line-row meta"><span>Archive</span><span>Selected plates, 2022-2026</span></div>
+          <div class="line-row meta"><span>Packet</span><span>Series text, contact sheets, print notes</span></div>
+          <div class="line-row meta"><span>Audience</span><span>Curators, collectors, editors, slow viewers</span></div>
+          <div class="line-row meta"><span>Social</span><span>Instagram / Xiaohongshu / studio email</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Contact ── -->
+    <section class="section" data-od-id="contact" id="contact">
+      <div class="container grid-2col">
+        <div class="rule-block">
+          <p class="eyebrow">Contact</p>
+          <h2>Request the packet</h2>
+        </div>
+        <form class="form-stack" id="contactForm">
+          <div class="field">
+            <label for="name">Name / institution</label>
+            <input class="input" id="name" name="name" required />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input class="input" id="email" name="email" type="email" required />
+          </div>
+          <div class="field">
+            <label for="message">Context</label>
+            <textarea
+              class="textarea"
+              id="message"
+              name="message"
+              placeholder="Exhibition, collecting, publishing, studio visit..."
+            ></textarea>
+          </div>
+          <button class="btn" type="submit">Send request</button>
+          <p class="notice meta" id="formNotice">
+            Request saved locally. A production build can connect this to studio email.
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <Footer pageLabel="About" tagline="contact@ph.studio" />
+</BaseLayout>
+
+<script>
+  const contactForm = document.getElementById('contactForm') as HTMLFormElement;
+  const formNotice = document.getElementById('formNotice')!;
+
+  contactForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!contactForm.checkValidity()) {
+      contactForm.reportValidity();
+      return;
+    }
+    const formData = new FormData(contactForm);
+    localStorage.setItem('phInquiry', JSON.stringify(Object.fromEntries(formData.entries())));
+    formNotice.classList.add('is-visible');
+  });
+</script>
+
+<style>
+  .about-hero {
+    min-height: calc(100svh - var(--nav-height));
+    display: grid;
+    grid-template-columns: 0.62fr 1.38fr;
+    gap: var(--gap-2xl);
+    align-items: center;
+    padding-block: clamp(52px, 8vw, 120px);
+  }
+
+  h1 {
+    font-size: var(--fs-h1);
+    line-height: 0.86;
+    letter-spacing: -0.09em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 8ch;
+  }
+
+  .portrait-plate {
+    min-height: 66svh;
+  }
+
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 0.72fr 1.28fr;
+    gap: var(--gap-2xl);
+    align-items: start;
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    line-height: 0.88;
+    letter-spacing: -0.08em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 8ch;
+  }
+
+  .statement-text {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4.6vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.07em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 14ch;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-xl);
+  }
+
+  .line-list {
+    border-top: 1px solid var(--fg);
+  }
+
+  .line-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--gap-md);
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .line-row span:last-child {
+    color: var(--fg);
+  }
+
+  /* ── Contact Form ── */
+  .form-stack {
+    display: grid;
+    gap: var(--gap-md);
+  }
+
+  .field {
+    display: grid;
+    gap: 8px;
+  }
+
+  label {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .input,
+  .textarea {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    padding: 13px 0;
+    transition: border-color 0.15s ease;
+  }
+
+  .input:focus,
+  .textarea:focus {
+    outline: 0;
+    border-color: var(--fg);
+  }
+
+  .textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.45;
+  }
+
+  .notice {
+    display: none;
+    color: var(--muted);
+  }
+
+  .notice.is-visible {
+    display: block;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 980px) {
+    .about-hero,
+    .grid-2col,
+    .two-col {
+      grid-template-columns: 1fr;
+    }
+
+    .about-hero {
+      min-height: 0;
+    }
+
+    .portrait-plate {
+      min-height: 420px;
+    }
+  }
+
+  @media (max-width: 620px) {
+    h1 {
+      font-size: clamp(60px, 18vw, 94px);
+    }
+  }
+</style>

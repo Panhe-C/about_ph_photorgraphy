@@ -1,0 +1,422 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Footer from '../components/Footer.astro';
+import { getWorks } from '../data/works';
+
+const works = getWorks();
+---
+
+<BaseLayout
+  title="Works"
+  description="Photography / selected plates by P.H. — interiors, thresholds, late light."
+>
+  <!-- Fixed transparent nav — exact match to portfolio.html -->
+  <header class="topnav-fixed" data-od-id="topnav">
+    <div class="topnav-fixed-inner">
+      <nav aria-label="Primary navigation">
+        <a href="/" class="nav-home" aria-current="page">HOME</a>
+        <a href="/works" class="nav-work">WORK</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="content">
+    <!-- ── Hero ── -->
+    <section class="section hero-section" data-od-id="works-hero">
+      <div class="container hero">
+        <div>
+          <p class="eyebrow">Photography / selected plates</p>
+          <h1>Works</h1>
+        </div>
+        <p class="lead">Select a location to change the viewing plate. Captions stay spare so the image field keeps the room.</p>
+      </div>
+    </section>
+
+    <!-- ── Plate Viewer ── -->
+    <section class="section" data-od-id="plate-viewer">
+      <div class="container viewer">
+        <!-- Left: work list -->
+        <div class="work-list" role="group" aria-label="Select work by location">
+          {
+            works.map((work, i) => (
+              <button
+                class="work-button meta"
+                type="button"
+                data-index={String(i)}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+              >
+                <span>{String(i + 1).padStart(2, '0')}</span>
+                <span>{work.title}</span>
+              </button>
+            ))
+          }
+        </div>
+
+        <!-- Center: plate -->
+        <div class="plate-wrap">
+          <div class="viewer-top meta">
+            <span id="plateCounter">( 01 / {String(works.length).padStart(2, '0')} )</span>
+            <span id="plateSeries">{works[0].series}</span>
+          </div>
+          <div
+            class="plate is-photo"
+            id="plate"
+            aria-live="polite"
+            aria-label="Selected photograph"
+            style={`background: url(${works[0].photo}) center / cover no-repeat`}
+          >
+            <span id="plateTitle">{works[0].title}</span>
+          </div>
+          <div class="viewer-bottom meta">
+            <span id="plateCaption">{works[0].caption}</span>
+            <span>Selected plate</span>
+          </div>
+        </div>
+
+        <!-- Right: metadata -->
+        <aside class="data-panel" aria-label="Selected work metadata">
+          <div class="data-list">
+            <div class="data-row meta"><span>Year</span><span id="plateYear">{works[0].year}</span></div>
+            <div class="data-row meta"><span>Ratio</span><span id="plateRatio">{works[0].ratio}</span></div>
+            <div class="data-row meta"><span>Mode</span><span>Still image</span></div>
+            <div class="data-row meta"><span>Print</span><span id="platePrint">{works[0].print}</span></div>
+          </div>
+          <a class="btn" href="/about#contact">Request packet</a>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <Footer pageLabel="Works" tagline="Six selected plates" />
+</BaseLayout>
+
+<script>
+  import { getWorks } from '../data/works';
+
+  const works = getWorks();
+
+  const buttons = Array.from(document.querySelectorAll('.work-button'));
+  const plate = document.getElementById('plate')!;
+  const fields = {
+    counter: document.getElementById('plateCounter')!,
+    title: document.getElementById('plateTitle')!,
+    series: document.getElementById('plateSeries')!,
+    caption: document.getElementById('plateCaption')!,
+    year: document.getElementById('plateYear')!,
+    ratio: document.getElementById('plateRatio')!,
+    print: document.getElementById('platePrint')!,
+  };
+
+  function selectWork(index: number) {
+    const work = works[index];
+    buttons.forEach((btn, i) => {
+      btn.setAttribute('aria-pressed', String(i === index));
+    });
+    fields.counter.textContent = `( ${String(index + 1).padStart(2, '0')} / ${String(works.length).padStart(2, '0')} )`;
+    fields.title.textContent = work.title;
+    fields.series.textContent = work.series;
+    fields.caption.textContent = work.caption;
+    fields.year.textContent = work.year;
+    fields.ratio.textContent = work.ratio;
+    fields.print.textContent = work.print;
+
+    if (work.photo) {
+      plate.classList.add('is-photo');
+      plate.style.setProperty('background', `url(${work.photo}) center / cover no-repeat`);
+    } else {
+      plate.classList.remove('is-photo');
+      plate.style.removeProperty('background');
+    }
+
+    history.replaceState(null, '', `#${index}`);
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectWork(Number((btn as HTMLElement).dataset.index));
+    });
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    const current = buttons.findIndex((b) => b.getAttribute('aria-pressed') === 'true');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      selectWork((current + 1) % works.length);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      selectWork((current - 1 + works.length) % works.length);
+    }
+  });
+
+  // Deep link from URL hash
+  const hashIndex = parseInt(location.hash.slice(1), 10);
+  if (hashIndex >= 0 && hashIndex < works.length) {
+    selectWork(hashIndex);
+  }
+</script>
+
+<style>
+  /* ── Fixed transparent nav — exact match to portfolio.html ── */
+  .topnav-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  .topnav-fixed-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 68px;
+    padding-inline: var(--gutter);
+  }
+
+  .topnav-fixed nav {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--gap-md);
+  }
+
+  .nav-home {
+    position: fixed;
+    left: calc(60% - 1.9rem);
+    top: 0;
+    height: 68px;
+    display: inline-flex;
+    align-items: center;
+    z-index: 21;
+    transform: translateX(-100%);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  .nav-work {
+    position: fixed;
+    left: 60%;
+    top: 0;
+    height: 68px;
+    display: inline-flex;
+    align-items: center;
+    transform: translateX(-50%);
+    z-index: 21;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .nav-home:hover,
+  .nav-work:hover {
+    color: var(--fg);
+  }
+
+  /* ── Hero section ── */
+  .hero-section {
+    padding-top: calc(68px + clamp(60px, 8vw, 120px));
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 0.78fr 1.22fr;
+    gap: var(--gap-2xl);
+    align-items: end;
+    min-height: 52svh;
+  }
+
+  h1 {
+    font-size: clamp(68px, 11vw, 180px);
+    line-height: 0.82;
+    letter-spacing: -0.09em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 5ch;
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
+    max-width: 24ch;
+  }
+
+  /* ── Plate viewer ── */
+  .viewer {
+    display: grid;
+    grid-template-columns: minmax(230px, 0.78fr) minmax(0, 1.7fr) minmax(180px, 0.55fr);
+    gap: var(--gap-lg);
+    align-items: stretch;
+    min-height: calc(100svh - 68px);
+  }
+
+  .work-list {
+    border-top: 1px solid var(--fg);
+    align-self: start;
+  }
+
+  .work-button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: var(--gap-md);
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    padding: 17px 0;
+    cursor: pointer;
+  }
+
+  .work-button[aria-pressed='true'],
+  .work-button:hover {
+    color: var(--fg);
+    background: var(--fg-soft);
+  }
+
+  .work-button span:first-child {
+    font-family: var(--font-mono);
+  }
+
+  .plate-wrap {
+    display: grid;
+    grid-template-rows: auto minmax(380px, 1fr) auto;
+    gap: var(--gap-md);
+  }
+
+  .viewer-top,
+  .viewer-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    color: var(--muted);
+  }
+
+  /* Plate matches portfolio.html: transition on background */
+  .plate {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    min-height: 58svh;
+    color: color-mix(in oklch, var(--fg) 46%, var(--surface));
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    transition: background 0.28s ease;
+  }
+
+  .plate::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 8%, transparent), transparent),
+      repeating-linear-gradient(0deg, color-mix(in oklch, var(--fg) 8%, transparent) 0 1px, transparent 1px 10px);
+    mix-blend-mode: screen;
+    opacity: 0.34;
+    pointer-events: none;
+  }
+
+  .plate.is-photo::before {
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+  }
+
+  .plate span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .data-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--gap-xl);
+    color: var(--muted);
+  }
+
+  .data-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .data-row {
+    display: grid;
+    grid-template-columns: 82px 1fr;
+    gap: var(--gap-md);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .data-row span:last-child {
+    color: var(--fg);
+  }
+
+  /* ── Responsive: 1080px ── */
+  @media (max-width: 1080px) {
+    .hero,
+    .viewer {
+      grid-template-columns: 1fr;
+    }
+
+    .viewer {
+      min-height: 0;
+    }
+
+    .plate {
+      min-height: 52svh;
+    }
+  }
+
+  /* ── Responsive: 980px ── */
+  @media (max-width: 980px) {
+    .topnav-fixed nav {
+      flex-wrap: wrap;
+    }
+
+    .nav-home {
+      position: static;
+      transform: none;
+      height: auto;
+    }
+
+    .nav-work {
+      position: static;
+      transform: none;
+      height: auto;
+    }
+  }
+
+  /* ── Responsive: 620px ── */
+  @media (max-width: 620px) {
+    :root {
+      --gutter: 20px;
+    }
+
+    h1 {
+      font-size: clamp(66px, 22vw, 104px);
+    }
+
+    .plate {
+      min-height: 340px;
+    }
+  }
+</style>
