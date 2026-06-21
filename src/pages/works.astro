@@ -100,6 +100,13 @@ const works = getWorks();
         </aside>
       </div>
     </section>
+
+    <!-- Lightbox overlay -->
+    <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Fullscreen preview">
+      <button class="lightbox-close" id="lightboxClose" aria-label="Close preview">&times;</button>
+      <img class="lightbox-img" id="lightboxImg" src="" alt="" />
+      <span class="lightbox-counter meta" id="lightboxCounter"></span>
+    </div>
   </main>
 
   <Footer pageLabel="Works" tagline="Six series, multiple plates" />
@@ -113,6 +120,10 @@ const works = getWorks();
   const buttons = Array.from(document.querySelectorAll('.work-button'));
   const plate = document.getElementById('plate')!;
   const thumbStrip = document.getElementById('thumbStrip')!;
+  const lightbox = document.getElementById('lightbox')!;
+  const lightboxImg = document.getElementById('lightboxImg') as HTMLImageElement;
+  const lightboxClose = document.getElementById('lightboxClose')!;
+  const lightboxCounter = document.getElementById('lightboxCounter')!;
   const fields = {
     counter: document.getElementById('plateCounter')!,
     title: document.getElementById('plateTitle')!,
@@ -181,8 +192,15 @@ const works = getWorks();
     });
   });
 
-  // Keyboard: ← → switch series, ↑ ↓ switch photos within series
+  // Keyboard navigation (unified for normal + lightbox)
   document.addEventListener('keydown', (e) => {
+    const inLightbox = lightbox.classList.contains('is-open');
+
+    if (e.key === 'Escape' && inLightbox) {
+      closeLightbox();
+      return;
+    }
+
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       if (e.shiftKey) {
@@ -193,6 +211,10 @@ const works = getWorks();
         thumbStrip.querySelectorAll('.thumb').forEach((t, i) => {
           t.setAttribute('aria-pressed', String(i === currentPhoto));
         });
+      }
+      if (inLightbox) {
+        lightboxImg.src = works[currentSeries].photos[currentPhoto];
+        lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
       }
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -205,7 +227,11 @@ const works = getWorks();
           t.setAttribute('aria-pressed', String(i === currentPhoto));
         });
       }
-    } else if (e.key === 'ArrowDown') {
+      if (inLightbox) {
+        lightboxImg.src = works[currentSeries].photos[currentPhoto];
+        lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
+      }
+    } else if (e.key === 'ArrowDown' && !inLightbox) {
       e.preventDefault();
       selectSeries((currentSeries + 1) % works.length);
     } else if (e.key === 'ArrowUp') {
@@ -219,6 +245,29 @@ const works = getWorks();
   if (hashIndex >= 0 && hashIndex < works.length) {
     selectSeries(hashIndex);
   }
+
+  // ── Lightbox ──
+  function openLightbox() {
+    const work = works[currentSeries];
+    lightboxImg.src = plate.style.backgroundImage.slice(5, -2).replace(/"/g, '');
+    lightboxImg.alt = work.title;
+    lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
+    lightbox.setAttribute('aria-hidden', 'false');
+    lightbox.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('is-open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  plate.addEventListener('click', openLightbox);
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
 </script>
 
 <style>
@@ -470,6 +519,62 @@ const works = getWorks();
       height: auto;
     }
     .topnav-fixed nav { flex-wrap: wrap; }
+  }
+
+  /* ── Lightbox ── */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: color-mix(in oklch, var(--bg) 96%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+
+  .lightbox.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 24px;
+    right: 28px;
+    z-index: 101;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.15s ease;
+  }
+
+  .lightbox-close:hover {
+    color: var(--fg);
+  }
+
+  .lightbox-img {
+    max-width: 92vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border: 1px solid var(--border);
+  }
+
+  .lightbox-counter {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--muted);
   }
 
   @media (max-width: 620px) {
