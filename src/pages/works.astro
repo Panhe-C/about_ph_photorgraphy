@@ -112,13 +112,10 @@ const works = getWorks();
   <Footer pageLabel="Works" tagline="Six series, multiple plates" />
 </BaseLayout>
 
-<script type="application/json" id="worksData">
-  {JSON.stringify(works)}
-</script>
+<script type="application/json" id="worksData" set:html={JSON.stringify(works)}></script>
 
 <script>
   const works = JSON.parse(document.getElementById('worksData')!.textContent!);
-
   const buttons = Array.from(document.querySelectorAll('.work-button'));
   const plate = document.getElementById('plate')!;
   const thumbStrip = document.getElementById('thumbStrip')!;
