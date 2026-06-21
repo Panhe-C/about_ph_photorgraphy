@@ -1,4 +1,18 @@
-// Works data — edit this array to manage your portfolio.
+// Works data — add a folder under src/assets/images/ with the series name,
+// drop photos in, and add a matching import.meta.glob call below.
+// Photos are auto-discovered from the filesystem at build time.
+
+const photosGlob = (modules: Record<string, unknown>) =>
+  Object.values(modules)
+    .map((m: any) => m?.default?.src || '')
+    .filter(Boolean)
+    .sort();
+
+const thresholdPhotos  = photosGlob(import.meta.glob('/src/assets/images/threshold-rooms/*.{jpg,jpeg,JPG,JPEG}',  { eager: true }));
+const perimeterPhotos  = photosGlob(import.meta.glob('/src/assets/images/perimeter-studies/*.{jpg,jpeg,JPG,JPEG}', { eager: true }));
+const windowPhotos     = photosGlob(import.meta.glob('/src/assets/images/window-index/*.{jpg,jpeg,JPG,JPEG}',     { eager: true }));
+const verticalPhotos   = photosGlob(import.meta.glob('/src/assets/images/vertical-rooms/*.{jpg,jpeg,JPG,JPEG}',  { eager: true }));
+const floraPhotos      = photosGlob(import.meta.glob('/src/assets/images/late-flora/*.{jpg,jpeg,JPG,JPEG}',      { eager: true }));
 
 export interface Work {
   title: string;
@@ -12,91 +26,46 @@ export interface Work {
 
 const works: Work[] = [
   {
-    title: 'Interior 01',
+    title: 'Interior',
     series: 'Threshold Rooms',
     caption: 'Late light held against a quiet wall.',
-    year: '2023',
-    ratio: '3:2',
-    print: 'Pigment proof',
-    photos: [
-      '/images/threshold-rooms/_C001369.jpg',
-      '/images/threshold-rooms/_C001498.jpg',
-      '/images/threshold-rooms/_C001499.jpg',
-      '/images/threshold-rooms/_C001506.jpg',
-    ],
+    year: '2023', ratio: '3:2', print: 'Pigment proof',
+    photos: thresholdPhotos,
   },
   {
-    title: 'Perimeter 02',
+    title: 'Perimeter',
     series: 'Perimeter Studies',
     caption: 'A temporary edge before the city starts again.',
-    year: '2023',
-    ratio: '3:2',
-    print: 'Silver study',
-    photos: [
-      '/images/perimeter-studies/CPH01731.jpg',
-      '/images/perimeter-studies/_C002700.JPG',
-      '/images/perimeter-studies/_C002701.JPG',
-      '/images/perimeter-studies/_C002704.JPG',
-      '/images/perimeter-studies/_C002727.JPG',
-    ],
+    year: '2023', ratio: '3:2', print: 'Silver study',
+    photos: perimeterPhotos,
   },
   {
-    title: 'Window 03',
+    title: 'Window',
     series: 'Window Index',
     caption: 'Reflection, condensation, and a room outside the frame.',
-    year: '2023',
-    ratio: '3:2',
-    print: 'Pigment proof',
-    photos: [
-      '/images/window-index/_CPH2033.jpeg',
-      '/images/window-index/_CPH2057.jpeg',
-      '/images/window-index/_CPH2077.jpeg',
-      '/images/window-index/_CPH2169.jpeg',
-      '/images/window-index/_CPH2181.jpeg',
-    ],
+    year: '2023', ratio: '3:2', print: 'Pigment proof',
+    photos: windowPhotos,
   },
   {
-    title: 'Stairwell 04',
+    title: 'Stairwell',
     series: 'Vertical Rooms',
     caption: 'A passage held between public noise and private light.',
-    year: '2023',
-    ratio: '2:3',
-    print: 'Contact sheet',
-    photos: [
-      '/images/vertical-rooms/_CPH2198.jpeg',
-      '/images/vertical-rooms/_CPH2317.jpeg',
-      '/images/vertical-rooms/_CPH2342.jpeg',
-      '/images/vertical-rooms/_CPH2382.jpeg',
-    ],
+    year: '2023', ratio: '2:3', print: 'Contact sheet',
+    photos: verticalPhotos,
   },
   {
-    title: 'Greenhouse 05',
+    title: 'Greenhouse',
     series: 'Late Flora',
     caption: 'Leaves become a surface for time and moisture.',
-    year: '2023',
-    ratio: '3:2',
-    print: 'Pigment proof',
-    photos: [
-      '/images/late-flora/_CPH2386.jpeg',
-      '/images/late-flora/_CPH2517.jpeg',
-      '/images/late-flora/_CPH2620.jpeg',
-      '/images/late-flora/_CPH2633.jpeg',
-      '/images/late-flora/_CPH2642.jpeg',
-    ],
+    year: '2023', ratio: '3:2', print: 'Pigment proof',
+    photos: floraPhotos,
   },
   {
-    title: 'Night Wall 06',
+    title: 'Night Wall',
     series: 'Perimeter Studies',
     caption: 'A dark wall interrupted by one small field of light.',
-    year: '2023',
-    ratio: '3:2',
-    print: 'Silver study',
-    photos: [
-      '/images/perimeter-studies/CPH01731.jpg',
-      '/images/perimeter-studies/_C002700.JPG',
-      '/images/perimeter-studies/_C002701.JPG',
-      '/images/perimeter-studies/_C002704.JPG',
-    ],
+    year: '2023', ratio: '3:2', print: 'Silver study',
+    photos: perimeterPhotos,
   },
 ];
 
