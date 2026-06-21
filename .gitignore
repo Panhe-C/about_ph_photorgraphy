@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+--full-page
+*.png
+prototype/
+Web-Prototype.zip
+Web-Prototype/
+portfolio.html

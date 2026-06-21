@@ -1,0 +1,230 @@
+/* ── Typography utilities ── */
+
+.meta, .eyebrow, .btn {
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+}
+
+/* ── TopNav ── */
+
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in oklch, var(--bg) 90%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topnav-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--gap-md);
+  min-height: var(--nav-height);
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.topnav nav {
+  display: flex;
+  gap: clamp(18px, 2.5vw, 44px);
+  justify-content: center;
+}
+
+.topnav nav a,
+.contact-link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.topnav nav a:hover,
+.topnav nav a[aria-current="page"],
+.contact-link:hover {
+  color: var(--fg);
+}
+
+.contact-link {
+  justify-self: end;
+}
+
+/* ── Plate ── */
+
+.plate {
+  position: relative;
+  overflow: hidden;
+  min-height: 44svh;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 68% 42%, color-mix(in oklch, var(--fg) 24%, transparent), transparent 24%),
+    linear-gradient(117deg, color-mix(in oklch, var(--fg) 10%, transparent), color-mix(in oklch, var(--surface) 96%, var(--fg)) 58%, color-mix(in oklch, var(--fg) 18%, var(--surface)));
+  display: grid;
+  place-items: center;
+  color: color-mix(in oklch, var(--fg) 46%, var(--surface));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.plate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 8%, transparent), transparent),
+    repeating-linear-gradient(0deg, color-mix(in oklch, var(--fg) 8%, transparent) 0 1px, transparent 1px 10px);
+  mix-blend-mode: screen;
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.plate.is-photo {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.plate.is-photo::before {
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+
+.plate .plate-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Buttons ── */
+
+.btn {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  background: transparent;
+  padding: 12px 18px;
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.btn:hover {
+  background: var(--fg);
+  color: var(--surface);
+}
+
+.btn::after {
+  content: "->";
+}
+
+/* ── Data Rows ── */
+
+.data-list {
+  display: grid;
+  gap: 14px;
+}
+
+.data-row {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: var(--gap-md);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.data-row span:last-child {
+  color: var(--fg);
+}
+
+/* ── Rule Block (statement heading) ── */
+
+.rule-block {
+  border-top: 1px solid var(--fg);
+  padding-top: 18px;
+}
+
+/* ── Footer ── */
+
+.pagefoot {
+  border-top: 1px solid var(--border);
+  padding-block: 34px;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.foot-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--gap-lg);
+  align-items: center;
+}
+
+.foot-grid span:last-child {
+  justify-self: end;
+}
+
+/* ── Responsive: 980px ── */
+
+@media (max-width: 980px) {
+  .topnav-inner,
+  .foot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topnav nav {
+    justify-content: start;
+    flex-wrap: wrap;
+  }
+
+  .contact-link,
+  .foot-grid span:last-child {
+    justify-self: start;
+  }
+}
+
+/* ── Responsive: 620px ── */
+
+@media (max-width: 620px) {
+  :root {
+    --gutter: 20px;
+    --fs-hero: clamp(66px, 22vw, 104px);
+  }
+
+  .topnav-inner {
+    padding-block: 16px;
+  }
+
+  .plate {
+    min-height: 320px;
+  }
+}

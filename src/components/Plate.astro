@@ -1,0 +1,23 @@
+---
+interface Props {
+  photoSrc?: string;
+  label?: string;
+  variant?: 'default' | 'clear';
+  class?: string;
+}
+
+const { photoSrc, label, variant = 'default', class: className } = Astro.props;
+---
+
+<div
+  class:list={[
+    'plate',
+    { 'is-photo': !!photoSrc },
+    className,
+  ]}
+  style={photoSrc ? `background-image: url(${photoSrc})` : undefined}
+  role="img"
+  aria-label={label || 'Photograph'}
+>
+  {label && !photoSrc && <span class="plate-label">{label}</span>}
+</div>

@@ -1,0 +1,40 @@
+:root {
+  /* ── Surface ── */
+  --bg:      oklch(4% 0 0);
+  --surface: oklch(8% 0 0);
+  --fg:      oklch(96% 0 0);
+  --muted:   oklch(68% 0 0);
+  --border:  oklch(24% 0 0);
+  --accent:  oklch(96% 0 0);
+
+  /* ── Derived tokens ── */
+  --accent-soft: color-mix(in oklch, var(--accent) 10%, transparent);
+  --fg-soft:     color-mix(in oklch, var(--fg) 8%, transparent);
+  --fg-invert:   var(--surface);
+
+  /* ── Typography ── */
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ── Type scale (fluid) ── */
+  --fs-hero:  clamp(76px, 13.4vw, 226px);
+  --fs-h1:    clamp(62px, 10vw, 170px);
+  --fs-h2:    clamp(42px, 6vw, 104px);
+  --fs-lead:  clamp(19px, 2vw, 30px);
+  --fs-body:  15px;
+  --fs-meta:  12px;
+
+  /* ── Spacing ── */
+  --gutter:  clamp(22px, 3vw, 56px);
+  --gap-sm:  12px;
+  --gap-md:  22px;
+  --gap-lg:  42px;
+  --gap-xl:  86px;
+  --gap-2xl: 150px;
+
+  /* ── Geometry ── */
+  --container: 1680px;
+  --nav-height: 68px;
+  --radius: 0;
+}

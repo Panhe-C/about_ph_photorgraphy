@@ -1,0 +1,32 @@
+{
+  "name": "about_ph_photorgraphy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Panhe-C/about_ph_photorgraphy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Panhe-C/about_ph_photorgraphy/issues"
+  },
+  "homepage": "https://github.com/Panhe-C/about_ph_photorgraphy#readme",
+  "dependencies": {
+    "astro": "^6.4.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
+  }
+}

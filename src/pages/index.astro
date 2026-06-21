@@ -1,0 +1,423 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Footer from '../components/Footer.astro';
+import { getWorks } from '../data/works';
+
+const works = getWorks();
+---
+
+<BaseLayout
+  title="Home"
+  description="P.H. — A quiet photographic index of rooms, edges, glass, and late light."
+>
+  <!-- Fixed transparent nav — exact match to lin-zhaoye-photography.html -->
+  <header class="topnav-fixed" data-od-id="topnav">
+    <div class="topnav-fixed-inner">
+      <nav aria-label="Primary navigation">
+        <a href="/" class="nav-home" aria-current="page">HOME</a>
+        <a href="/works" class="nav-work">WORK</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="content">
+    <!-- ── Hero ── -->
+    <section class="container home-stage" data-od-id="home-hero" style="background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 36%, color-mix(in oklch, var(--bg) 62%, transparent) 100%), url('/images/mqm6vcct-DJI_20221008120715_0011_D.jpg'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;">
+      <aside class="edge-panel edge-left" aria-hidden="true"></aside>
+
+      <div class="hero-core">
+        <h1 class="hero-title">About P.H.</h1>
+        <div class="plate hero-plate">
+          <span>Viewing plate 01 / threshold room</span>
+        </div>
+        <div class="hero-bottom">
+          <p class="lead">A quiet photographic index of rooms, edges, glass, and late light.</p>
+          <a class="btn" href="/works">View work</a>
+        </div>
+      </div>
+
+      <aside class="edge-panel edge-right" aria-label="Works preview">
+        <nav aria-label="Portfolio titles" class="titles-nav">
+          {works.map(w => (
+            <a href="/works">{w.title}</a>
+          ))}
+        </nav>
+      </aside>
+    </section>
+
+    <!-- ── Location Index ── -->
+    <section class="section" data-od-id="location-index">
+      <div class="container index-section">
+        <div>
+          <p class="eyebrow">Location index</p>
+          <h2>Work by place</h2>
+        </div>
+        <div class="location-grid" aria-label="Selected locations">
+          {works.map((work, i) => (
+            <a class="location-row meta" href={`/works#${i}`}>
+              <span>{String(i + 1).padStart(2, '0')}</span>
+              <span>{work.title}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Plate Strip ── -->
+    <section class="section" data-od-id="plate-strip">
+      <div class="container split-gallery" aria-label="Selected photographs">
+        <div class="plate is-photo" style={`background: url(${works[0].photo}) center / cover no-repeat`} role="img" aria-label={works[0].title}>
+        </div>
+        <div class="plate is-photo" style={`background: url(${works[1].photo}) center / cover no-repeat`} role="img" aria-label={works[1].title}>
+        </div>
+        <div class="plate is-photo" style={`background: url(${works[2].photo}) center / cover no-repeat`} role="img" aria-label={works[2].title}>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Statement ── -->
+    <section class="section" data-od-id="statement">
+      <div class="container statement">
+        <p>The work is sparse because the room is already speaking.</p>
+        <div>
+          <p class="lead">
+            This first version uses selected plates from the archive. The structure is built for
+            slow viewing: metadata at the edge, image at the center, biography held back.
+          </p>
+          <a class="btn" href="/about" style="margin-top: 28px;">Read statement</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer pageLabel="Photography" tagline="P.H. — rooms, thresholds, peripheral light" />
+</BaseLayout>
+
+<style>
+  /* ── Fixed transparent nav ── */
+  .topnav-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  .topnav-fixed-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 68px;
+    padding-inline: var(--gutter);
+  }
+
+  .topnav-fixed nav {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--gap-md);
+  }
+
+  .nav-home {
+    position: fixed;
+    left: calc(60% - 1.9rem);
+    top: 0;
+    height: 68px;
+    display: inline-flex;
+    align-items: center;
+    z-index: 21;
+    transform: translateX(-100%);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .nav-work {
+    position: fixed;
+    left: 60%;
+    top: 0;
+    height: 68px;
+    display: inline-flex;
+    align-items: center;
+    transform: translateX(-50%);
+    z-index: 21;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .nav-home:hover,
+  .nav-work:hover {
+    color: var(--fg);
+  }
+
+  /* ── Home stage hero ── */
+  .home-stage {
+    min-height: 100svh;
+    padding-top: calc(68px + clamp(34px, 5vw, 82px));
+    padding-bottom: clamp(34px, 5vw, 82px);
+    display: grid;
+    grid-template-columns: minmax(170px, 0.65fr) minmax(0, 1.8fr) minmax(170px, 0.65fr);
+    gap: var(--gap-lg);
+    align-items: stretch;
+  }
+
+  .edge-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 68svh;
+    color: var(--muted);
+  }
+
+  .edge-left {
+    /* empty — aria-hidden */
+  }
+
+  .edge-right {
+    justify-content: flex-start;
+    align-items: flex-end;
+    text-align: right;
+    min-height: 0;
+  }
+
+  .titles-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 18px;
+    width: fit-content;
+    max-width: min(100%, 22ch);
+    margin-inline-start: auto;
+    padding-top: 4px;
+  }
+
+  .titles-nav a {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.35;
+    text-align: right;
+    text-wrap: balance;
+    text-decoration: none;
+  }
+
+  .titles-nav a:hover {
+    color: var(--fg);
+  }
+
+  .hero-core {
+    display: grid;
+    grid-template-rows: auto minmax(320px, 1fr) auto;
+    gap: clamp(24px, 4vw, 64px);
+    min-width: 0;
+  }
+
+  .hero-title {
+    font-size: clamp(76px, 13.4vw, 226px);
+    line-height: 1.12;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 6.4ch;
+    transform: translateX(clamp(-340px, -17vw, -88px));
+  }
+
+  .hero-plate {
+    border: 0 !important;
+    min-height: 0;
+    background: transparent !important;
+    overflow: visible;
+    box-shadow: none;
+    position: relative;
+    display: grid;
+    place-items: center;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 3px color-mix(in oklch, var(--bg) 85%, transparent);
+  }
+
+  .hero-plate::before {
+    content: none !important;
+  }
+
+  .hero-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-lg);
+    align-items: end;
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
+    max-width: 25ch;
+  }
+
+  /* ── Location Index ── */
+  .index-section {
+    display: grid;
+    grid-template-columns: 0.72fr 1.28fr;
+    gap: var(--gap-2xl);
+    align-items: start;
+  }
+
+  .section h2 {
+    font-size: clamp(42px, 6vw, 104px);
+    line-height: 0.86;
+    letter-spacing: -0.08em;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 7ch;
+  }
+
+  .location-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--gap-xl);
+    border-top: 1px solid var(--fg);
+  }
+
+  .location-row {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: var(--gap-md);
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+
+  .location-row:hover {
+    background: var(--fg-soft);
+  }
+
+  /* ── Split Gallery ── */
+  .split-gallery {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr 1fr;
+    gap: var(--gap-md);
+    align-items: end;
+  }
+
+  .split-gallery .plate {
+    position: relative;
+    overflow: hidden;
+    min-height: auto;
+    aspect-ratio: 3 / 4;
+    border: 1px solid var(--border);
+  }
+
+  .split-gallery .plate:nth-child(2) {
+    aspect-ratio: 1 / 1;
+    margin-bottom: var(--gap-xl);
+  }
+
+  .plate::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 8%, transparent), transparent),
+      repeating-linear-gradient(0deg, color-mix(in oklch, var(--fg) 8%, transparent) 0 1px, transparent 1px 10px);
+    mix-blend-mode: screen;
+    opacity: 0.34;
+    pointer-events: none;
+  }
+
+  .plate.is-photo::before {
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+  }
+
+  /* ── Statement ── */
+  .statement {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-xl);
+    align-items: end;
+  }
+
+  .statement p:first-child {
+    font-family: var(--font-display);
+    font-size: clamp(38px, 5vw, 88px);
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  /* ── Responsive: 980px ── */
+  @media (max-width: 980px) {
+    .home-stage,
+    .hero-bottom,
+    .index-section,
+    .statement {
+      grid-template-columns: 1fr;
+    }
+
+    .edge-panel {
+      min-height: auto;
+      gap: var(--gap-md);
+    }
+
+    .home-stage {
+      min-height: 0;
+    }
+
+    .location-grid,
+    .split-gallery {
+      grid-template-columns: 1fr;
+    }
+
+    .split-gallery .plate:nth-child(2) {
+      margin-bottom: 0;
+    }
+
+    .topnav-fixed nav {
+      flex-wrap: wrap;
+    }
+
+    .nav-home,
+    .nav-work {
+      position: static;
+      transform: none;
+      height: auto;
+    }
+
+    .hero-title {
+      transform: none;
+    }
+  }
+
+  /* ── Responsive: 620px ── */
+  @media (max-width: 620px) {
+    :root {
+      --gutter: 20px;
+    }
+
+    .hero-title {
+      font-size: clamp(66px, 22vw, 104px);
+    }
+  }
+</style>
