@@ -2,8 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
 import { getWorks } from '../data/works';
+import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
 const works = getWorks();
+const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_D.jpg', HERO_WIDTH);
 ---
 
 <BaseLayout
@@ -22,7 +24,7 @@ const works = getWorks();
 
   <main id="content">
     <!-- ── Hero ── -->
-    <section class="container home-stage" data-od-id="home-hero" style="background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 36%, color-mix(in oklch, var(--bg) 62%, transparent) 100%), url('/images/mqm6vcct-DJI_20221008120715_0011_D.jpg'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;">
+    <section class="container home-stage" data-od-id="home-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 36%, color-mix(in oklch, var(--bg) 62%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;`}>
       <aside class="edge-panel edge-left" aria-hidden="true"></aside>
 
       <div class="hero-core">
@@ -66,11 +68,11 @@ const works = getWorks();
     <!-- ── Plate Strip ── -->
     <section class="section" data-od-id="plate-strip">
       <div class="container split-gallery" aria-label="Selected photographs">
-        <div class="plate is-photo" style={`background: url(${works[0].photos[0]}) center / cover no-repeat`} role="img" aria-label={works[0].title}>
+        <div class="plate is-photo" style={`background: url(${works[0]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[0]?.title || ''}>
         </div>
-        <div class="plate is-photo" style={`background: url(${works[1]?.photos[0] || ''}) center / cover no-repeat`} role="img" aria-label={works[1]?.title || ''}>
+        <div class="plate is-photo" style={`background: url(${works[1]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[1]?.title || ''}>
         </div>
-        <div class="plate is-photo" style={`background: url(${works[2]?.photos[0] || ''}) center / cover no-repeat`} role="img" aria-label={works[2]?.title || ''}>
+        <div class="plate is-photo" style={`background: url(${works[2]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[2]?.title || ''}>
         </div>
       </div>
     </section>

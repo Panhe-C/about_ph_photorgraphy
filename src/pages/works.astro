@@ -61,7 +61,7 @@ const works = getWorks();
             id="plate"
             aria-live="polite"
             aria-label="Selected photograph"
-            style={`background: url(${works[0].photos[0]}) center / cover no-repeat`}
+            style={`background: url(${works[0].photos[0].src}) center / cover no-repeat`}
           >
             <span id="plateTitle">{works[0].title}</span>
           </div>
@@ -79,7 +79,7 @@ const works = getWorks();
                 type="button"
                 data-photo-index={String(pi)}
                 aria-pressed={pi === 0 ? 'true' : 'false'}
-                style={`background-image: url(${photo})`}
+                style={`background-image: url(${photo.thumb})`}
               >
                 <span class="sr-only">Photo {pi + 1}</span>
               </button>
@@ -154,12 +154,12 @@ const works = getWorks();
 
   function renderThumbs(work: typeof works[0]) {
     thumbStrip.innerHTML = work.photos.map((photo, pi) =>
-      `<button class="thumb" type="button" data-photo-index="${pi}" aria-pressed="${pi === currentPhoto}" style="background-image: url(${photo})"><span class="sr-only">Photo ${pi + 1}</span></button>`
+      `<button class="thumb" type="button" data-photo-index="${pi}" aria-pressed="${pi === currentPhoto}" style="background-image: url(${photo.thumb})"><span class="sr-only">Photo ${pi + 1}</span></button>`
     ).join('');
   }
 
   function updatePlate(work: typeof works[0]) {
-    const photo = work.photos[currentPhoto];
+    const photo = work.photos[currentPhoto].src;
     plate.style.setProperty('background', `url(${photo}) center / cover no-repeat`);
     fields.counter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
     fields.title.textContent = work.title;
@@ -212,7 +212,7 @@ const works = getWorks();
         });
       }
       if (inLightbox) {
-        lightboxImg.src = works[currentSeries].photos[currentPhoto];
+        lightboxImg.src = works[currentSeries].photos[currentPhoto].src;
         lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
       }
     } else if (e.key === 'ArrowLeft') {
@@ -227,7 +227,7 @@ const works = getWorks();
         });
       }
       if (inLightbox) {
-        lightboxImg.src = works[currentSeries].photos[currentPhoto];
+        lightboxImg.src = works[currentSeries].photos[currentPhoto].src;
         lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
       }
     } else if (e.key === 'ArrowDown' && !inLightbox) {
@@ -248,7 +248,7 @@ const works = getWorks();
   // ── Lightbox ──
   function openLightbox() {
     const work = works[currentSeries];
-    lightboxImg.src = plate.style.backgroundImage.slice(5, -2).replace(/"/g, '');
+    lightboxImg.src = work.photos[currentPhoto].src;
     lightboxImg.alt = work.title;
     lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
     lightbox.setAttribute('aria-hidden', 'false');

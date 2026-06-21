@@ -3,6 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TopNav from '../components/TopNav.astro';
 import Footer from '../components/Footer.astro';
 import Plate from '../components/Plate.astro';
+import { DISPLAY_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
+
+const portraitImage = optimizedVariantUrl('/images/Beijing 2023/_C002700.JPG', DISPLAY_WIDTH);
 ---
 
 <BaseLayout
@@ -14,7 +17,7 @@ import Plate from '../components/Plate.astro';
   <main id="content">
     <!-- ── About Hero ── -->
     <section class="container about-hero" data-od-id="about-hero">
-      <Plate photoSrc="/images/photos/_C002700.JPG" label="Portrait placeholder" class="portrait-plate" />
+      <Plate photoSrc={portraitImage} label="Portrait placeholder" class="portrait-plate" />
       <div>
         <p class="eyebrow">About</p>
         <h1>Photographs of rooms, edges, and withheld time.</h1>
