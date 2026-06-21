@@ -17,7 +17,7 @@ function scanFolder(folder: string): string[] {
   return readdirSync(dir)
     .filter(f => /\.(jpg|jpeg|png|webp|avif)$/i.test(f))
     .sort()
-    .map(f => `/images/${folder}/${f}`);
+    .map(f => `/images/${encodeURIComponent(folder)}/${encodeURIComponent(f)}`);
 }
 
 function folderToTitle(folder: string): string {
