@@ -1,4 +1,4 @@
-// Works data — to update with real titles and photos, edit the works array below.
+// Works data — edit this array to manage your portfolio.
 
 export interface Work {
   title: string;
@@ -7,7 +7,7 @@ export interface Work {
   year: string;
   ratio: string;
   print: string;
-  photo: string;
+  photos: string[];
 }
 
 const works: Work[] = [
@@ -18,7 +18,12 @@ const works: Work[] = [
     year: '2023',
     ratio: '3:2',
     print: 'Pigment proof',
-    photo: '/images/photos/_C001369.jpg',
+    photos: [
+      '/images/threshold-rooms/_C001369.jpg',
+      '/images/threshold-rooms/_C001498.jpg',
+      '/images/threshold-rooms/_C001499.jpg',
+      '/images/threshold-rooms/_C001506.jpg',
+    ],
   },
   {
     title: 'Perimeter 02',
@@ -27,7 +32,13 @@ const works: Work[] = [
     year: '2023',
     ratio: '3:2',
     print: 'Silver study',
-    photo: '/images/photos/_C001498.jpg',
+    photos: [
+      '/images/perimeter-studies/CPH01731.jpg',
+      '/images/perimeter-studies/_C002700.JPG',
+      '/images/perimeter-studies/_C002701.JPG',
+      '/images/perimeter-studies/_C002704.JPG',
+      '/images/perimeter-studies/_C002727.JPG',
+    ],
   },
   {
     title: 'Window 03',
@@ -36,7 +47,13 @@ const works: Work[] = [
     year: '2023',
     ratio: '3:2',
     print: 'Pigment proof',
-    photo: '/images/photos/_C001499.jpg',
+    photos: [
+      '/images/window-index/_CPH2033.jpeg',
+      '/images/window-index/_CPH2057.jpeg',
+      '/images/window-index/_CPH2077.jpeg',
+      '/images/window-index/_CPH2169.jpeg',
+      '/images/window-index/_CPH2181.jpeg',
+    ],
   },
   {
     title: 'Stairwell 04',
@@ -45,7 +62,12 @@ const works: Work[] = [
     year: '2023',
     ratio: '2:3',
     print: 'Contact sheet',
-    photo: '/images/photos/_C001506.jpg',
+    photos: [
+      '/images/vertical-rooms/_CPH2198.jpeg',
+      '/images/vertical-rooms/_CPH2317.jpeg',
+      '/images/vertical-rooms/_CPH2342.jpeg',
+      '/images/vertical-rooms/_CPH2382.jpeg',
+    ],
   },
   {
     title: 'Greenhouse 05',
@@ -54,7 +76,13 @@ const works: Work[] = [
     year: '2023',
     ratio: '3:2',
     print: 'Pigment proof',
-    photo: '/images/photos/CPH01731.jpg',
+    photos: [
+      '/images/late-flora/_CPH2386.jpeg',
+      '/images/late-flora/_CPH2517.jpeg',
+      '/images/late-flora/_CPH2620.jpeg',
+      '/images/late-flora/_CPH2633.jpeg',
+      '/images/late-flora/_CPH2642.jpeg',
+    ],
   },
   {
     title: 'Night Wall 06',
@@ -63,7 +91,12 @@ const works: Work[] = [
     year: '2023',
     ratio: '3:2',
     print: 'Silver study',
-    photo: '/images/photos/_C002700.JPG',
+    photos: [
+      '/images/perimeter-studies/CPH01731.jpg',
+      '/images/perimeter-studies/_C002700.JPG',
+      '/images/perimeter-studies/_C002701.JPG',
+      '/images/perimeter-studies/_C002704.JPG',
+    ],
   },
 ];
 
