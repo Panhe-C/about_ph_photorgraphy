@@ -38,8 +38,8 @@ const works = getWorks();
 
       <aside class="edge-panel edge-right" aria-label="Works preview">
         <nav aria-label="Portfolio titles" class="titles-nav">
-          {works.map(w => (
-            <a href="/works">{w.title}</a>
+          {works.map((w, i) => (
+            <a href={`/works#${i}`}>{w.title}</a>
           ))}
         </nav>
       </aside>
