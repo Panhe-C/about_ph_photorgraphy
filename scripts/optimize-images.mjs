@@ -90,6 +90,13 @@ async function optimizeSeriesFolder(folderName) {
 
 async function main() {
   if (!existsSync(inputRoot)) {
+    if (existsSync(outputRoot)) {
+      console.log(
+        `Skipping image optimization because ${inputRoot} is unavailable; using committed variants in ${outputRoot}.`,
+      );
+      return;
+    }
+
     throw new Error(`Image source folder not found: ${inputRoot}`);
   }
 

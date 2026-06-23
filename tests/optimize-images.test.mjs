@@ -43,3 +43,24 @@ test('optimizer reuses committed variants when source files are Git LFS pointers
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('optimizer skips when source images are unavailable but optimized images are committed', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ph-optimize-skip-'));
+  const outputRoot = join(root, 'public', 'images-optimized');
+
+  mkdirSync(join(outputRoot, 'Tokyo 2024'), { recursive: true });
+  writeFileSync(join(outputRoot, 'Tokyo 2024', 'photo-1600.webp'), 'display image');
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/optimize-images.mjs', join(root, 'source-images'), outputRoot],
+      { cwd: process.cwd(), encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Skipping image optimization/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
