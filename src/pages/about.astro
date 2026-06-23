@@ -1,23 +1,28 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TopNav from '../components/TopNav.astro';
 import Footer from '../components/Footer.astro';
-import Plate from '../components/Plate.astro';
-import { DISPLAY_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
+import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
-const portraitImage = optimizedVariantUrl('/images/Beijing 2023/_C002700.JPG', DISPLAY_WIDTH);
+const heroImage = optimizedVariantUrl('/images/ABOUT.jpg', HERO_WIDTH);
 ---
 
 <BaseLayout
   title="About"
   description="P.H. works with thresholds, interior light, temporary boundaries, and objects that feel recently abandoned."
 >
-  <TopNav currentPage="about" />
+  <header class="topnav-fixed" data-od-id="topnav">
+    <div class="topnav-fixed-inner">
+      <nav aria-label="Primary navigation">
+        <a href="/">HOME</a>
+        <a href="/works">WORK</a>
+        <a href="/about" aria-current="page">ABOUT</a>
+      </nav>
+    </div>
+  </header>
 
   <main id="content">
     <!-- ── About Hero ── -->
-    <section class="container about-hero" data-od-id="about-hero">
-      <Plate photoSrc={portraitImage} label="Portrait placeholder" class="portrait-plate" />
+    <section class="container about-hero" data-od-id="about-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 42%, color-mix(in oklch, var(--bg) 72%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat; background-attachment: scroll, fixed;`}>
       <div>
         <p class="eyebrow">About</p>
         <h1>Photographs of rooms, edges, and withheld time.</h1>
@@ -112,13 +117,64 @@ const portraitImage = optimizedVariantUrl('/images/Beijing 2023/_C002700.JPG', D
 </script>
 
 <style>
-  .about-hero {
-    min-height: calc(100svh - var(--nav-height));
-    display: grid;
-    grid-template-columns: 0.62fr 1.38fr;
-    gap: var(--gap-2xl);
+  .topnav-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  .topnav-fixed-inner {
+    display: flex;
     align-items: center;
-    padding-block: clamp(52px, 8vw, 120px);
+    justify-content: space-between;
+    width: 100%;
+    min-height: 68px;
+    padding-inline: var(--gutter);
+  }
+
+  .topnav-fixed nav {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: clamp(240px, 20vw, 420px);
+    z-index: 21;
+    height: 68px;
+    justify-content: flex-end;
+    align-items: center;
+    gap: clamp(24px, 4vw, 56px);
+  }
+
+  .topnav-fixed nav a {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .topnav-fixed nav a[aria-current="page"],
+  .topnav-fixed nav a:hover {
+    color: var(--fg);
+  }
+
+  .about-hero {
+    min-height: 100svh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-2xl);
+    align-items: end;
+    padding-top: calc(68px + clamp(52px, 8vw, 120px));
+    padding-bottom: clamp(52px, 8vw, 120px);
   }
 
   h1 {
@@ -128,10 +184,6 @@ const portraitImage = optimizedVariantUrl('/images/Beijing 2023/_C002700.JPG', D
     font-weight: 800;
     text-transform: uppercase;
     max-width: 8ch;
-  }
-
-  .portrait-plate {
-    min-height: 66svh;
   }
 
   .grid-2col {
@@ -243,13 +295,20 @@ const portraitImage = optimizedVariantUrl('/images/Beijing 2023/_C002700.JPG', D
       grid-template-columns: 1fr;
     }
 
+    .topnav-fixed nav {
+      position: static;
+      height: auto;
+      flex-wrap: wrap;
+    }
+
+    .topnav-fixed nav a {
+      height: auto;
+    }
+
     .about-hero {
       min-height: 0;
     }
 
-    .portrait-plate {
-      min-height: 420px;
-    }
   }
 
   @media (max-width: 620px) {

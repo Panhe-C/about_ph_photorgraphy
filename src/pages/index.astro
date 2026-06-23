@@ -5,7 +5,7 @@ import { getWorks } from '../data/works';
 import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
 const works = getWorks();
-const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_D.jpg', HERO_WIDTH);
+const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
 ---
 
 <BaseLayout
@@ -18,6 +18,7 @@ const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_
       <nav aria-label="Primary navigation">
         <a href="/" class="nav-home" aria-current="page">HOME</a>
         <a href="/works" class="nav-work">WORK</a>
+        <a href="/about" class="nav-about">ABOUT</a>
       </nav>
     </div>
   </header>
@@ -122,38 +123,19 @@ const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_
 
   .topnav-fixed nav {
     display: flex;
-    width: 100%;
-    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    right: clamp(240px, 20vw, 420px);
+    z-index: 21;
+    height: 68px;
+    justify-content: flex-end;
     align-items: center;
-    gap: var(--gap-md);
+    gap: clamp(24px, 4vw, 56px);
   }
 
-  .nav-home {
-    position: fixed;
-    left: calc(60% - 1.9rem);
-    top: 0;
-    height: 68px;
+  .topnav-fixed nav a {
     display: inline-flex;
     align-items: center;
-    z-index: 21;
-    transform: translateX(-100%);
-    font-family: var(--font-mono);
-    font-size: var(--fs-meta);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    color: var(--fg);
-    text-decoration: none;
-  }
-
-  .nav-work {
-    position: fixed;
-    left: 60%;
-    top: 0;
-    height: 68px;
-    display: inline-flex;
-    align-items: center;
-    transform: translateX(-50%);
-    z-index: 21;
     font-family: var(--font-mono);
     font-size: var(--fs-meta);
     letter-spacing: 0.02em;
@@ -162,8 +144,8 @@ const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_
     text-decoration: none;
   }
 
-  .nav-home:hover,
-  .nav-work:hover {
+  .topnav-fixed nav a[aria-current="page"],
+  .topnav-fixed nav a:hover {
     color: var(--fg);
   }
 
@@ -398,13 +380,12 @@ const heroImage = optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_
     }
 
     .topnav-fixed nav {
+      position: static;
+      height: auto;
       flex-wrap: wrap;
     }
 
-    .nav-home,
-    .nav-work {
-      position: static;
-      transform: none;
+    .topnav-fixed nav a {
       height: auto;
     }
 

@@ -2,8 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
 import { getWorks } from '../data/works';
+import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
 const works = getWorks();
+const heroImage = optimizedVariantUrl('/images/WORK.jpg', HERO_WIDTH);
 ---
 
 <BaseLayout
@@ -16,12 +18,13 @@ const works = getWorks();
       <nav aria-label="Primary navigation">
         <a href="/" class="nav-home">HOME</a>
         <a href="/works" class="nav-work" aria-current="page">WORK</a>
+        <a href="/about" class="nav-about">ABOUT</a>
       </nav>
     </div>
   </header>
 
   <main id="content">
-    <section class="section hero-section" data-od-id="works-hero">
+    <section class="section hero-section" data-od-id="works-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 42%, color-mix(in oklch, var(--bg) 72%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat; background-attachment: scroll, fixed;`}>
       <div class="container hero">
         <div>
           <p class="eyebrow">Photography / selected plates</p>
@@ -294,20 +297,19 @@ const works = getWorks();
 
   .topnav-fixed nav {
     display: flex;
-    width: 100%;
-    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    right: clamp(240px, 20vw, 420px);
+    z-index: 21;
+    height: 68px;
+    justify-content: flex-end;
     align-items: center;
+    gap: clamp(24px, 4vw, 56px);
   }
 
-  .nav-home {
-    position: fixed;
-    left: calc(60% - 1.9rem);
-    top: 0;
-    height: 68px;
+  .topnav-fixed nav a {
     display: inline-flex;
     align-items: center;
-    z-index: 21;
-    transform: translateX(-100%);
     font-family: var(--font-mono);
     font-size: var(--fs-meta);
     letter-spacing: 0.02em;
@@ -316,24 +318,10 @@ const works = getWorks();
     text-decoration: none;
   }
 
-  .nav-work {
-    position: fixed;
-    left: 60%;
-    top: 0;
-    height: 68px;
-    display: inline-flex;
-    align-items: center;
-    transform: translateX(-50%);
-    z-index: 21;
-    font-family: var(--font-mono);
-    font-size: var(--fs-meta);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+  .topnav-fixed nav a[aria-current="page"],
+  .topnav-fixed nav a:hover {
     color: var(--fg);
-    text-decoration: none;
   }
-
-  .nav-home:hover { color: var(--fg); }
 
   .hero-section {
     padding-top: calc(68px + clamp(60px, 8vw, 120px));
@@ -511,12 +499,12 @@ const works = getWorks();
   }
 
   @media (max-width: 980px) {
-    .nav-home,
-    .nav-work {
+    .topnav-fixed nav {
       position: static;
-      transform: none;
       height: auto;
     }
+
+    .topnav-fixed nav a { height: auto; }
     .topnav-fixed nav { flex-wrap: wrap; }
   }
 
