@@ -1,16 +1,16 @@
 ---
 interface Props {
-  pageLabel: string;
+  pageLabel?: string;
   tagline?: string;
 }
 
-const { pageLabel, tagline = 'Art photography' } = Astro.props;
+const { pageLabel, tagline } = Astro.props;
 ---
 
 <footer class="pagefoot">
   <div class="container foot-grid meta">
     <span>&copy; P.H. / 2026</span>
-    <span>{pageLabel}</span>
-    <span>{tagline}</span>
+    {pageLabel && <span>{pageLabel}</span>}
+    {tagline && <span>{tagline}</span>}
   </div>
 </footer>

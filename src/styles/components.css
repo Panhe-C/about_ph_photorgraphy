@@ -72,6 +72,38 @@
   justify-self: end;
 }
 
+.theme-toggle {
+  position: fixed;
+  top: 0;
+  right: var(--gutter);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  padding: 0;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--fg);
+}
+
+.theme-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Show the icon of the theme you can switch to */
+:root[data-theme='dark'] .theme-icon-moon {
+  display: none;
+}
+
+:root[data-theme='light'] .theme-icon-sun {
+  display: none;
+}
+
 /* ── Plate ── */
 
 .plate {

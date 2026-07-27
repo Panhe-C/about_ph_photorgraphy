@@ -22,7 +22,7 @@ const heroImage = optimizedVariantUrl('/images/ABOUT.jpg', HERO_WIDTH);
 
   <main id="content">
     <!-- ── About Hero ── -->
-    <section class="container about-hero" data-od-id="about-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 42%, color-mix(in oklch, var(--bg) 72%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat; background-attachment: scroll, fixed;`}>
+    <section class="container about-hero" data-od-id="about-hero" style={`background-color: var(--bg); background-image: var(--hero-overlay), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat; background-attachment: scroll, fixed;`}>
       <div>
         <p class="eyebrow">About</p>
         <h1>Photographs of rooms, edges, and withheld time.</h1>
