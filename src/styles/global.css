@@ -48,6 +48,17 @@ img {
   height: auto;
 }
 
+/* ── Cross-document view transitions: smooth same-origin page changes ── */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
 /* ── Shared utility / layout classes ── */
 
 .container {

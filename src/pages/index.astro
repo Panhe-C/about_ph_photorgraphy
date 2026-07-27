@@ -25,9 +25,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
 
   <main id="content">
     <!-- ── Hero ── -->
-    <section class="container home-stage" data-od-id="home-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 36%, color-mix(in oklch, var(--bg) 62%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;`}>
-      <aside class="edge-panel edge-left" aria-hidden="true"></aside>
-
+    <section class="container home-stage" data-od-id="home-hero" style={`background-color: var(--bg); background-image: var(--hero-overlay), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;`}>
       <div class="hero-core">
         <h1 class="hero-title">About P.H.</h1>
         <div class="plate hero-plate">
@@ -47,53 +45,13 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
         </nav>
       </aside>
     </section>
-
-    <!-- ── Location Index ── -->
-    <section class="section" data-od-id="location-index">
-      <div class="container index-section">
-        <div>
-          <p class="eyebrow">Location index</p>
-          <h2>Work by place</h2>
-        </div>
-        <div class="location-grid" aria-label="Selected locations">
-          {works.map((work, i) => (
-            <a class="location-row meta" href={`/works#${i}`}>
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <span>{work.title}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Plate Strip ── -->
-    <section class="section" data-od-id="plate-strip">
-      <div class="container split-gallery" aria-label="Selected photographs">
-        <div class="plate is-photo" style={`background: url(${works[0]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[0]?.title || ''}>
-        </div>
-        <div class="plate is-photo" style={`background: url(${works[1]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[1]?.title || ''}>
-        </div>
-        <div class="plate is-photo" style={`background: url(${works[2]?.photos[0]?.src || ''}) center / cover no-repeat`} role="img" aria-label={works[2]?.title || ''}>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Statement ── -->
-    <section class="section" data-od-id="statement">
-      <div class="container statement">
-        <p>The work is sparse because the room is already speaking.</p>
-        <div>
-          <p class="lead">
-            This first version uses selected plates from the archive. The structure is built for
-            slow viewing: metadata at the edge, image at the center, biography held back.
-          </p>
-          <a class="btn" href="/about" style="margin-top: 28px;">Read statement</a>
-        </div>
-      </div>
-    </section>
   </main>
 
   <Footer pageLabel="Photography" tagline="P.H. — rooms, thresholds, peripheral light" />
+
+  <!-- Handoff veil: fades in as the titles slide out, so the old page never
+       reappears bare while the browser loads /works -->
+  <div class="handoff-veil" aria-hidden="true"></div>
 </BaseLayout>
 
 <style>
@@ -125,7 +83,8 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     display: flex;
     position: fixed;
     top: 0;
-    right: clamp(240px, 20vw, 420px);
+    /* leave room for the fixed theme-toggle icon at the far right */
+    right: calc(var(--gutter) + 56px);
     z-index: 21;
     height: 68px;
     justify-content: flex-end;
@@ -156,7 +115,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     padding-bottom: clamp(34px, 5vw, 82px);
     background-attachment: scroll, fixed;
     display: grid;
-    grid-template-columns: minmax(170px, 0.65fr) minmax(0, 1.8fr) minmax(170px, 0.65fr);
+    grid-template-columns: minmax(0, 1.8fr) minmax(170px, 0.65fr);
     gap: var(--gap-lg);
     align-items: stretch;
   }
@@ -167,10 +126,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     justify-content: space-between;
     min-height: 68svh;
     color: var(--muted);
-  }
-
-  .edge-left {
-    /* empty — aria-hidden */
   }
 
   .edge-right {
@@ -222,7 +177,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     font-weight: 800;
     text-transform: uppercase;
     max-width: 6.4ch;
-    transform: translateX(clamp(-340px, -17vw, -88px));
   }
 
   .hero-plate {
@@ -260,104 +214,10 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     max-width: 25ch;
   }
 
-  /* ── Location Index ── */
-  .index-section {
-    display: grid;
-    grid-template-columns: 0.72fr 1.28fr;
-    gap: var(--gap-2xl);
-    align-items: start;
-  }
-
-  .section h2 {
-    font-size: clamp(42px, 6vw, 104px);
-    line-height: 0.86;
-    letter-spacing: -0.08em;
-    font-weight: 800;
-    text-transform: uppercase;
-    max-width: 7ch;
-  }
-
-  .location-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 var(--gap-xl);
-    border-top: 1px solid var(--fg);
-  }
-
-  .location-row {
-    display: grid;
-    grid-template-columns: 58px 1fr;
-    gap: var(--gap-md);
-    padding: 18px 0;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s ease;
-  }
-
-  .location-row:hover {
-    background: var(--fg-soft);
-  }
-
-  /* ── Split Gallery ── */
-  .split-gallery {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr 1fr;
-    gap: var(--gap-md);
-    align-items: end;
-  }
-
-  .split-gallery .plate {
-    position: relative;
-    overflow: hidden;
-    min-height: auto;
-    aspect-ratio: 3 / 4;
-    border: 1px solid var(--border);
-  }
-
-  .split-gallery .plate:nth-child(2) {
-    aspect-ratio: 1 / 1;
-    margin-bottom: var(--gap-xl);
-  }
-
-  .plate::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 8%, transparent), transparent),
-      repeating-linear-gradient(0deg, color-mix(in oklch, var(--fg) 8%, transparent) 0 1px, transparent 1px 10px);
-    mix-blend-mode: screen;
-    opacity: 0.34;
-    pointer-events: none;
-  }
-
-  .plate.is-photo::before {
-    opacity: 0.12;
-    mix-blend-mode: multiply;
-  }
-
-  /* ── Statement ── */
-  .statement {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap-xl);
-    align-items: end;
-  }
-
-  .statement p:first-child {
-    font-family: var(--font-display);
-    font-size: clamp(38px, 5vw, 88px);
-    line-height: 0.95;
-    letter-spacing: -0.07em;
-    font-weight: 800;
-    text-transform: uppercase;
-  }
-
   /* ── Responsive: 980px ── */
   @media (max-width: 980px) {
     .home-stage,
-    .hero-bottom,
-    .index-section,
-    .statement {
+    .hero-bottom {
       grid-template-columns: 1fr;
     }
 
@@ -370,15 +230,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
       min-height: 0;
     }
 
-    .location-grid,
-    .split-gallery {
-      grid-template-columns: 1fr;
-    }
-
-    .split-gallery .plate:nth-child(2) {
-      margin-bottom: 0;
-    }
-
     .topnav-fixed nav {
       position: static;
       height: auto;
@@ -387,10 +238,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
 
     .topnav-fixed nav a {
       height: auto;
-    }
-
-    .hero-title {
-      transform: none;
     }
   }
 
@@ -404,4 +251,75 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
       font-size: clamp(66px, 22vw, 104px);
     }
   }
+
+  /* ── Handoff veil: covers the page while /works loads ── */
+  .handoff-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: var(--bg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.36s ease 0.04s;
+  }
+
+  .handoff-veil.on {
+    opacity: 1;
+  }
+
+  /* ── Handoff to /works: right-hand title list slides left ── */
+  .titles-nav a {
+    transition: transform 0.32s ease, opacity 0.32s ease, color 0.15s ease;
+  }
+
+  .titles-nav.is-leaving a {
+    transform: translateX(-90px);
+    opacity: 0;
+  }
+
+  .titles-nav.is-leaving a:nth-child(1) { transition-delay: 0ms; }
+  .titles-nav.is-leaving a:nth-child(2) { transition-delay: 30ms; }
+  .titles-nav.is-leaving a:nth-child(3) { transition-delay: 60ms; }
+  .titles-nav.is-leaving a:nth-child(4) { transition-delay: 90ms; }
+  .titles-nav.is-leaving a:nth-child(5) { transition-delay: 120ms; }
+  .titles-nav.is-leaving a:nth-child(6) { transition-delay: 150ms; }
+  .titles-nav.is-leaving a:nth-child(7) { transition-delay: 180ms; }
+  .titles-nav.is-leaving a:nth-child(8) { transition-delay: 210ms; }
 </style>
+
+<script>
+  // Handoff to /works: the right-hand title list slides left while a solid
+  // veil fades in; navigation happens only once the veil fully covers the
+  // page, so the load gap reads as a continuous transition instead of a
+  // flash of the bare home page. The works index overlay then takes over
+  // with the same titles (see works.astro).
+  const titlesNav = document.querySelector('.titles-nav');
+  const veil = document.querySelector('.handoff-veil');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const withHandoff = (href: string) => {
+    const [path, hash] = href.split('#');
+    return `${path}?from=home${hash ? `#${hash}` : ''}`;
+  };
+
+  document.querySelectorAll<HTMLAnchorElement>('a[href^="/works"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      if (reduceMotion || !titlesNav) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      titlesNav.classList.add('is-leaving');
+      veil?.classList.add('on');
+      const href = link.getAttribute('href') ?? '/works';
+      setTimeout(() => { window.location.href = withHandoff(href); }, 420);
+    });
+  });
+
+  // Back/forward cache: if the user returns via browser Back, the page is
+  // restored mid-handoff (veil up, titles gone) — reset it.
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      titlesNav?.classList.remove('is-leaving');
+      veil?.classList.remove('on');
+    }
+  });
+</script>

@@ -1,5 +1,7 @@
-:root {
-  /* ── Surface ── */
+/* ── Theme-specific surface tokens ── */
+
+:root,
+:root[data-theme='dark'] {
   --bg:      oklch(4% 0 0);
   --surface: oklch(8% 0 0);
   --fg:      oklch(96% 0 0);
@@ -7,12 +9,39 @@
   --border:  oklch(24% 0 0);
   --accent:  oklch(96% 0 0);
 
-  /* ── Derived tokens ── */
   --accent-soft: color-mix(in oklch, var(--accent) 10%, transparent);
   --fg-soft:     color-mix(in oklch, var(--fg) 8%, transparent);
   --fg-invert:   var(--surface);
+  color-scheme: dark;
 
-  /* ── Typography ── */
+  /* Hero image overlay (dark theme keeps the gradient wash) */
+  --hero-overlay: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--bg) 45%, transparent) 0%,
+    transparent 36%,
+    color-mix(in oklch, var(--bg) 62%, transparent) 100%
+  );
+}
+
+:root[data-theme='light'] {
+  --bg:      oklch(98% 0 0);
+  --surface: oklch(95% 0 0);
+  --fg:      oklch(10% 0 0);
+  --muted:   oklch(46% 0 0);
+  --border:  oklch(90% 0 0);
+  --accent:  oklch(10% 0 0);
+
+  --accent-soft: color-mix(in oklch, var(--accent) 10%, transparent);
+  --fg-soft:     color-mix(in oklch, var(--fg) 8%, transparent);
+  --fg-invert:   var(--surface);
+  color-scheme: light;
+
+  /* Light theme: drop the frosted gradient wash, show the photo cleanly */
+  --hero-overlay: none;
+}
+
+/* ── Typography ── */
+:root {
   --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
   --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;

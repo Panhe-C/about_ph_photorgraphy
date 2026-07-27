@@ -2,10 +2,22 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
 import { getWorks } from '../data/works';
-import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
-const works = getWorks();
-const heroImage = optimizedVariantUrl('/images/WORK.jpg', HERO_WIDTH);
+const works = getWorks().map((w) => {
+  const year = w.folder.match(/\d{4}/)?.[0] ?? w.year;
+  return {
+    ...w,
+    year,
+    shortTitle: w.title.replace(/\s*\d{4}\s*$/, ''),
+  };
+});
+
+const totalPlates = works.reduce((n, w) => n + w.photos.length, 0);
+
+const clientWorks = works.map((w) => ({
+  title: w.shortTitle,
+  photos: w.photos.map((p) => ({ src: p.src, thumb: p.thumb })),
+}));
 ---
 
 <BaseLayout
@@ -24,252 +36,263 @@ const heroImage = optimizedVariantUrl('/images/WORK.jpg', HERO_WIDTH);
   </header>
 
   <main id="content">
-    <section class="section hero-section" data-od-id="works-hero" style={`background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in oklch, var(--bg) 45%, transparent) 0%, transparent 42%, color-mix(in oklch, var(--bg) 72%, transparent) 100%), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat; background-attachment: scroll, fixed;`}>
-      <div class="container hero">
-        <div>
-          <p class="eyebrow">Photography / selected plates</p>
-          <h1>Works</h1>
+    <section class="works-room" data-od-id="works-room">
+      <!-- Stage: one plate, page-centered, toggle right below it -->
+      <div class="stage">
+        <div class="plate-box">
+          <img
+            id="plateImg"
+            src={works[0]?.photos[0]?.src}
+            alt={`${works[0]?.shortTitle} — plate 1`}
+          />
+          <button class="step prev" id="stepPrev" type="button" aria-label="Previous plate"></button>
+          <button class="step next" id="stepNext" type="button" aria-label="Next plate"></button>
         </div>
-        <p class="lead">Select a series to browse. Click thumbnails to view individual plates.</p>
+        <div class="room-toggle">
+          <button class="toggle-btn" id="indexToggle" type="button" aria-expanded="false" aria-controls="indexOverlay">Index</button>
+          <span class="toggle-sep" aria-hidden="true"></span>
+          <button class="toggle-btn" id="thumbsToggle" type="button" aria-expanded="false" aria-controls="thumbsOverlay">Thumbs</button>
+        </div>
       </div>
-    </section>
 
-    <section class="section" data-od-id="plate-viewer">
-      <div class="container viewer">
-        <!-- Left: series list -->
-        <div class="work-list" role="group" aria-label="Select series">
-          {works.map((work, i) => (
-            <button
-              class="work-button meta"
-              type="button"
-              data-index={String(i)}
-              aria-pressed={i === 0 ? 'true' : 'false'}
-            >
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <span>{work.title}</span>
-            </button>
+      <!-- Index overlay: bare series titles -->
+      <div class="room-overlay" id="indexOverlay" aria-hidden="true">
+        <ul class="series-list">
+          {works.map((w, i) => (
+            <li>
+              <button
+                class="series-row"
+                type="button"
+                data-series={String(i)}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+              >
+                {w.shortTitle}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button class="overlay-close" id="indexClose" type="button" aria-label="Close index">&times;</button>
+      </div>
+
+      <script is:inline>
+        // Runs synchronously during parse, before first paint: when arriving
+        // from home, the index overlay must be fully open in the very first
+        // frame — the page module runs too late (post-paint), which is what
+        // let a bare works page flash through mid-handoff.
+        if (new URLSearchParams(location.search).get('from') === 'home') {
+          var ovl = document.getElementById('indexOverlay');
+          ovl.classList.add('open', 'is-instant');
+          ovl.setAttribute('aria-hidden', 'false');
+          document.getElementById('indexToggle').setAttribute('aria-expanded', 'true');
+          document.body.style.overflow = 'hidden';
+          if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            ovl.classList.add('is-entering');
+          }
+        }
+      </script>
+
+      <!-- Thumbs overlay: every plate, grouped by series -->
+      <div class="room-overlay thumbs-overlay" id="thumbsOverlay" aria-hidden="true">
+        <div class="thumbs-scroll">
+          {works.map((w, i) => (
+            <section class="thumbs-series">
+              <p class="thumbs-series-title meta">{w.shortTitle}</p>
+              <div class="thumbs-grid">
+                {w.photos.map((p, pi) => (
+                  <button
+                    class="thumb-cell"
+                    type="button"
+                    data-series={String(i)}
+                    data-photo={String(pi)}
+                    aria-label={`${w.shortTitle} — plate ${pi + 1}`}
+                  >
+                    <img src={p.thumb} alt="" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
+        <button class="overlay-close" id="thumbsClose" type="button" aria-label="Close thumbnails">&times;</button>
+      </div>
 
-        <!-- Center: gallery -->
-        <div class="gallery-wrap">
-          <div class="viewer-top meta">
-            <span id="plateCounter">01 / {String(works[0].photos.length).padStart(2, '0')}</span>
-            <span id="plateSeries">{works[0].folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
-          </div>
-
-          <!-- Main plate -->
-          <div
-            class="plate is-photo"
-            id="plate"
-            aria-live="polite"
-            aria-label="Selected photograph"
-            style={`background: url(${works[0].photos[0].src}) center / cover no-repeat`}
-          >
-            <span id="plateTitle">{works[0].title}</span>
-          </div>
-
-          <div class="viewer-bottom meta">
-            <span id="plateCaption">{works[0].caption}</span>
-            <span>Selected plate</span>
-          </div>
-
-          <!-- Thumbnail strip -->
-          <div class="thumb-strip" id="thumbStrip" role="group" aria-label="Series photographs">
-            {works[0].photos.map((photo, pi) => (
-              <button
-                class="thumb"
-                type="button"
-                data-photo-index={String(pi)}
-                aria-pressed={pi === 0 ? 'true' : 'false'}
-                style={`background-image: url(${photo.thumb})`}
-              >
-                <span class="sr-only">Photo {pi + 1}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <!-- Right: metadata -->
-        <aside class="data-panel" aria-label="Selected work metadata">
-          <div class="data-list">
-            <div class="data-row meta"><span>Year</span><span id="plateYear">{works[0].year}</span></div>
-            <div class="data-row meta"><span>Ratio</span><span id="plateRatio">{works[0].ratio}</span></div>
-            <div class="data-row meta"><span>Mode</span><span>Still image</span></div>
-            <div class="data-row meta"><span>Print</span><span id="platePrint">{works[0].print}</span></div>
-            <div class="data-row meta"><span>Plates</span><span id="plateCount">{String(works[0].photos.length)}</span></div>
-          </div>
-          <a class="btn" href="/about#contact">Request packet</a>
-        </aside>
+      <!-- Screensaver: kicks in after idle, any input exits -->
+      <div class="screensaver" id="screensaver" aria-hidden="true">
+        <img id="ssImg" alt="" />
       </div>
     </section>
-
-    <!-- Lightbox overlay -->
-    <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Fullscreen preview">
-      <button class="lightbox-close" id="lightboxClose" aria-label="Close preview">&times;</button>
-      <img class="lightbox-img" id="lightboxImg" src="" alt="" />
-      <span class="lightbox-counter meta" id="lightboxCounter"></span>
-    </div>
   </main>
 
-  <Footer pageLabel="Works" tagline="Six series, multiple plates" />
+  <Footer />
 </BaseLayout>
 
-<script type="application/json" id="worksData" set:html={JSON.stringify(works)}></script>
+<script type="application/json" id="worksData" set:html={JSON.stringify(clientWorks)}></script>
 
 <script>
   const works = JSON.parse(document.getElementById('worksData')!.textContent!);
-  const buttons = Array.from(document.querySelectorAll('.work-button'));
-  const plate = document.getElementById('plate')!;
-  const thumbStrip = document.getElementById('thumbStrip')!;
-  const lightbox = document.getElementById('lightbox')!;
-  const lightboxImg = document.getElementById('lightboxImg') as HTMLImageElement;
-  const lightboxClose = document.getElementById('lightboxClose')!;
-  const lightboxCounter = document.getElementById('lightboxCounter')!;
-  const fields = {
-    counter: document.getElementById('plateCounter')!,
-    title: document.getElementById('plateTitle')!,
-    series: document.getElementById('plateSeries')!,
-    caption: document.getElementById('plateCaption')!,
-    year: document.getElementById('plateYear')!,
-    ratio: document.getElementById('plateRatio')!,
-    print: document.getElementById('platePrint')!,
-    count: document.getElementById('plateCount')!,
-  };
+
+  const plateImg = document.getElementById('plateImg') as HTMLImageElement;
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('.series-row'));
+  const indexToggle = document.getElementById('indexToggle')!;
+  const thumbsToggle = document.getElementById('thumbsToggle')!;
+  const indexOverlay = document.getElementById('indexOverlay')!;
+  const thumbsOverlay = document.getElementById('thumbsOverlay')!;
+  const overlays = [indexOverlay, thumbsOverlay];
+  const toggles = [indexToggle, thumbsToggle];
 
   let currentSeries = 0;
   let currentPhoto = 0;
 
-  // Event delegation: clicks on any .thumb bubble up to thumbStrip
-  thumbStrip.addEventListener('click', (e) => {
-    const thumb = (e.target as HTMLElement).closest('.thumb');
-    if (!thumb) return;
-    const index = Number((thumb as HTMLElement).dataset.photoIndex);
-    if (!isNaN(index)) {
-      currentPhoto = index;
-      const work = works[currentSeries];
-      updatePlate(work);
-      thumbStrip.querySelectorAll('.thumb').forEach((t, i) => {
-        t.setAttribute('aria-pressed', String(i === index));
-      });
-    }
-  });
-
-  function renderThumbs(work: typeof works[0]) {
-    thumbStrip.innerHTML = work.photos.map((photo, pi) =>
-      `<button class="thumb" type="button" data-photo-index="${pi}" aria-pressed="${pi === currentPhoto}" style="background-image: url(${photo.thumb})"><span class="sr-only">Photo ${pi + 1}</span></button>`
-    ).join('');
+  function render() {
+    const w = works[currentSeries];
+    plateImg.style.opacity = '0';
+    plateImg.onload = () => { plateImg.style.opacity = '1'; };
+    plateImg.src = w.photos[currentPhoto].src;
+    plateImg.alt = `${w.title} — plate ${currentPhoto + 1}`;
+    rows.forEach((r, j) => r.setAttribute('aria-pressed', String(j === currentSeries)));
   }
 
-  function updatePlate(work: typeof works[0]) {
-    const photo = work.photos[currentPhoto].src;
-    plate.style.setProperty('background', `url(${photo}) center / cover no-repeat`);
-    fields.counter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
-    fields.title.textContent = work.title;
-    fields.series.textContent = work.folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    fields.caption.textContent = work.caption;
-    fields.year.textContent = work.year;
-    fields.ratio.textContent = work.ratio;
-    fields.print.textContent = work.print;
-    fields.count.textContent = String(work.photos.length);
+  function goTo(series: number, photo: number) {
+    currentSeries = series;
+    currentPhoto = photo;
+    render();
+    history.replaceState(null, '', `#${series}`);
   }
 
-  function selectSeries(index: number) {
-    currentSeries = index;
-    currentPhoto = 0;
-    const work = works[index];
-
-    buttons.forEach((btn, i) => {
-      btn.setAttribute('aria-pressed', String(i === index));
-    });
-
-    updatePlate(work);
-    renderThumbs(work);
-    history.replaceState(null, '', `#${index}`);
+  function stepPhoto(dir: number) {
+    const len = works[currentSeries].photos.length;
+    goTo(currentSeries, (currentPhoto + dir + len) % len);
   }
 
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      selectSeries(Number((btn as HTMLElement).dataset.index));
-    });
-  });
-
-  // Keyboard navigation (unified for normal + lightbox)
-  document.addEventListener('keydown', (e) => {
-    const inLightbox = lightbox.classList.contains('is-open');
-
-    if (e.key === 'Escape' && inLightbox) {
-      closeLightbox();
-      return;
-    }
-
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      if (e.shiftKey) {
-        selectSeries((currentSeries + 1) % works.length);
-      } else {
-        currentPhoto = (currentPhoto + 1) % works[currentSeries].photos.length;
-        updatePlate(works[currentSeries]);
-        thumbStrip.querySelectorAll('.thumb').forEach((t, i) => {
-          t.setAttribute('aria-pressed', String(i === currentPhoto));
-        });
-      }
-      if (inLightbox) {
-        lightboxImg.src = works[currentSeries].photos[currentPhoto].src;
-        lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
-      }
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      if (e.shiftKey) {
-        selectSeries((currentSeries - 1 + works.length) % works.length);
-      } else {
-        currentPhoto = (currentPhoto - 1 + works[currentSeries].photos.length) % works[currentSeries].photos.length;
-        updatePlate(works[currentSeries]);
-        thumbStrip.querySelectorAll('.thumb').forEach((t, i) => {
-          t.setAttribute('aria-pressed', String(i === currentPhoto));
-        });
-      }
-      if (inLightbox) {
-        lightboxImg.src = works[currentSeries].photos[currentPhoto].src;
-        lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(works[currentSeries].photos.length).padStart(2, '0')}`;
-      }
-    } else if (e.key === 'ArrowDown' && !inLightbox) {
-      e.preventDefault();
-      selectSeries((currentSeries + 1) % works.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      selectSeries((currentSeries - 1 + works.length) % works.length);
-    }
-  });
-
-  // Deep link
-  const hashIndex = parseInt(location.hash.slice(1), 10);
-  if (hashIndex >= 0 && hashIndex < works.length) {
-    selectSeries(hashIndex);
+  function stepSeries(dir: number) {
+    goTo((currentSeries + dir + works.length) % works.length, 0);
   }
 
-  // ── Lightbox ──
-  function openLightbox() {
-    const work = works[currentSeries];
-    lightboxImg.src = work.photos[currentPhoto].src;
-    lightboxImg.alt = work.title;
-    lightboxCounter.textContent = `${String(currentPhoto + 1).padStart(2, '0')} / ${String(work.photos.length).padStart(2, '0')}`;
-    lightbox.setAttribute('aria-hidden', 'false');
-    lightbox.classList.add('is-open');
+  /* ── Overlays (Index / Thumbs) ── */
+  function openOverlay(el: HTMLElement, btn: HTMLElement) {
+    overlays.forEach((o) => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); });
+    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
+    el.classList.add('open');
+    el.setAttribute('aria-hidden', 'false');
+    btn.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
   }
-
-  function closeLightbox() {
-    lightbox.classList.remove('is-open');
-    lightbox.setAttribute('aria-hidden', 'true');
+  function closeOverlays() {
+    overlays.forEach((o) => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); });
+    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
     document.body.style.overflow = '';
   }
+  const anyOverlayOpen = () => overlays.some((o) => o.classList.contains('open'));
 
-  plate.addEventListener('click', openLightbox);
-  lightboxClose.addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) closeLightbox();
+  indexToggle.addEventListener('click', () => {
+    indexOverlay.classList.contains('open') ? closeOverlays() : openOverlay(indexOverlay, indexToggle);
   });
+  thumbsToggle.addEventListener('click', () => {
+    thumbsOverlay.classList.contains('open') ? closeOverlays() : openOverlay(thumbsOverlay, thumbsToggle);
+  });
+  document.getElementById('indexClose')!.addEventListener('click', closeOverlays);
+  document.getElementById('thumbsClose')!.addEventListener('click', closeOverlays);
+  overlays.forEach((o) => o.addEventListener('click', (e) => { if (e.target === o) closeOverlays(); }));
+
+  rows.forEach((row, i) => {
+    row.addEventListener('click', () => { goTo(i, 0); closeOverlays(); });
+  });
+  document.querySelectorAll<HTMLElement>('.thumb-cell').forEach((cell) => {
+    cell.addEventListener('click', () => {
+      goTo(Number(cell.dataset.series), Number(cell.dataset.photo));
+      closeOverlays();
+    });
+  });
+  document.getElementById('stepPrev')!.addEventListener('click', () => stepPhoto(-1));
+  document.getElementById('stepNext')!.addEventListener('click', () => stepPhoto(1));
+
+  /* ── Screensaver: starts after idle, any input exits ── */
+  const IDLE_MS = 40_000;
+  const SLIDE_MS = 3_200;
+  const allPhotos = works.flatMap((w, si) =>
+    w.photos.map((p: { src: string; thumb: string }, pi: number) => ({ src: p.src, si, pi }))
+  );
+  const ssEl = document.getElementById('screensaver')!;
+  const ssImg = document.getElementById('ssImg') as HTMLImageElement;
+  let ssActive = false;
+  let ssJustExited = false;
+  let ssIndex = 0;
+  let idleTimer = 0;
+  let slideTimer = 0;
+
+  function ssAdvance() {
+    ssIndex = (ssIndex + 1) % allPhotos.length;
+    ssImg.style.opacity = '0';
+    setTimeout(() => { ssImg.src = allPhotos[ssIndex].src; }, 500);
+  }
+  ssImg.onload = () => { if (ssActive) ssImg.style.opacity = '1'; };
+
+  function startScreensaver() {
+    ssActive = true;
+    ssIndex = allPhotos.findIndex((p) => p.si === currentSeries && p.pi === currentPhoto);
+    ssImg.src = allPhotos[ssIndex].src;
+    ssEl.classList.add('on');
+    ssEl.setAttribute('aria-hidden', 'false');
+    slideTimer = window.setInterval(ssAdvance, SLIDE_MS);
+  }
+  function exitScreensaver() {
+    ssActive = false;
+    ssJustExited = true;
+    setTimeout(() => { ssJustExited = false; }, 50);
+    ssEl.classList.remove('on');
+    ssEl.setAttribute('aria-hidden', 'true');
+    clearInterval(slideTimer);
+    ssImg.style.opacity = '0';
+  }
+  function resetIdle() {
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(startScreensaver, IDLE_MS);
+  }
+
+  (['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart'] as const).forEach((ev) => {
+    window.addEventListener(ev, (e) => {
+      if (ssActive) {
+        e.stopPropagation();
+        e.preventDefault();
+        exitScreensaver();
+      }
+      resetIdle();
+    }, { capture: true });
+  });
+  // Swallow the click that dismissed the screensaver so it doesn't advance a plate
+  window.addEventListener('click', (e) => {
+    if (ssJustExited) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, { capture: true });
+  resetIdle();
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'Escape' && anyOverlayOpen()) { closeOverlays(); return; }
+    if (anyOverlayOpen()) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); stepPhoto(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); stepPhoto(-1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); stepSeries(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); stepSeries(-1); }
+  });
+
+  // Deep link (e.g. from the home page index)
+  const hashIndex = parseInt(location.hash.slice(1), 10);
+  if (hashIndex >= 0 && hashIndex < works.length) {
+    goTo(hashIndex, 0);
+  }
+
+  // Arriving from home: the inline script already opened the overlay
+  // pre-paint; here we only strip the param and clean up the one-shot
+  // transition classes after the rows have slid in.
+  if (new URLSearchParams(location.search).get('from') === 'home') {
+    setTimeout(() => indexOverlay.classList.remove('is-entering', 'is-instant'), 1000);
+    history.replaceState(null, '', `${location.pathname}${location.hash}`);
+  }
 </script>
 
 <style>
@@ -318,198 +341,87 @@ const heroImage = optimizedVariantUrl('/images/WORK.jpg', HERO_WIDTH);
     text-decoration: none;
   }
 
-  .topnav-fixed nav a[aria-current="page"],
+  .topnav-fixed nav a[aria-current='page'],
   .topnav-fixed nav a:hover {
     color: var(--fg);
   }
 
-  .hero-section {
-    padding-top: calc(68px + clamp(60px, 8vw, 120px));
-  }
-
-  .hero {
-    display: grid;
-    grid-template-columns: 0.78fr 1.22fr;
-    gap: var(--gap-2xl);
-    align-items: end;
-    min-height: 52svh;
-  }
-
-  h1 {
-    font-size: clamp(68px, 11vw, 180px);
-    line-height: 0.82;
-    letter-spacing: -0.09em;
-    font-weight: 800;
-    text-transform: uppercase;
-    max-width: 5ch;
-  }
-
-  .lead {
-    font-size: var(--fs-lead);
-    line-height: 1.25;
-    letter-spacing: -0.04em;
-    max-width: 24ch;
-  }
-
-  .viewer {
-    display: grid;
-    grid-template-columns: minmax(230px, 0.78fr) minmax(0, 1.7fr) minmax(180px, 0.55fr);
-    gap: var(--gap-lg);
-    align-items: start;
-    min-height: calc(100svh - 68px);
-  }
-
-  .work-list {
-    border-top: 1px solid var(--fg);
-    align-self: start;
-  }
-
-  .work-button {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 42px 1fr;
-    gap: var(--gap-md);
-    text-align: left;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--muted);
-    padding: 17px 0;
-    cursor: pointer;
-  }
-
-  .work-button[aria-pressed='true'],
-  .work-button:hover {
-    color: var(--fg);
-    background: var(--fg-soft);
-  }
-
-  .work-button span:first-child {
-    font-family: var(--font-mono);
-  }
-
-  .gallery-wrap {
-    display: grid;
-    gap: var(--gap-md);
-    align-content: start;
-  }
-
-  .viewer-top,
-  .viewer-bottom {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--gap-md);
-    color: var(--muted);
-  }
-
-  .plate {
-    position: relative;
+  /* ── Viewing room: exactly one viewport, no page scroll ── */
+  .works-room {
+    height: 100svh;
     overflow: hidden;
-    border: 1px solid var(--border);
-    display: grid;
-    place-items: center;
-    min-height: 52svh;
-    color: color-mix(in oklch, var(--fg) 46%, var(--surface));
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    transition: background 0.28s ease;
+    padding-top: 68px;
   }
 
-  .plate::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 8%, transparent), transparent),
-      repeating-linear-gradient(0deg, color-mix(in oklch, var(--fg) 8%, transparent) 0 1px, transparent 1px 10px);
-    mix-blend-mode: screen;
-    opacity: 0.34;
-    pointer-events: none;
-  }
-
-  .plate.is-photo::before {
-    opacity: 0.12;
-    mix-blend-mode: multiply;
-  }
-
-  .plate span {
+  .stage {
     position: relative;
-    z-index: 1;
-  }
-
-  /* ── Thumbnail strip ── */
-  .thumb-strip {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-
-  .thumb {
-    flex-shrink: 0;
-    width: 72px;
-    height: 72px;
-    border: 1px solid var(--border);
-    background-size: cover;
-    background-position: center;
-    cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.15s ease, border-color 0.15s ease;
-    padding: 0;
-  }
-
-  .thumb:hover {
-    opacity: 0.8;
-  }
-
-  .thumb[aria-pressed='true'] {
-    opacity: 1;
-    border-color: var(--fg);
-  }
-
-  .data-panel {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: var(--gap-xl);
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 2.5svh, 26px);
+    /* clear the fixed footer */
+    padding-bottom: 88px;
+  }
+
+  .plate-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* JD proportion: roughly 45vw × 58svh, dead center, wide empty canvas */
+  .stage img {
+    max-width: 45vw;
+    max-height: 58svh;
+    object-fit: contain;
+    transition: opacity 0.18s ease;
+  }
+
+  .step {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    cursor: w-resize;
+  }
+
+  .step.prev { left: 0; }
+  .step.next { right: 0; cursor: e-resize; }
+
+  .room-toggle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toggle-btn {
+    padding: 4px 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
   }
 
-  .data-list { display: grid; gap: 14px; }
-
-  .data-row {
-    display: grid;
-    grid-template-columns: 82px 1fr;
-    gap: var(--gap-md);
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
+  .toggle-btn:hover,
+  .toggle-btn[aria-expanded='true'] {
+    color: var(--fg);
   }
 
-  .data-row span:last-child { color: var(--fg); }
-
-  @media (max-width: 1080px) {
-    .hero,
-    .viewer {
-      grid-template-columns: 1fr;
-    }
-    .viewer { min-height: 0; }
-    .plate { min-height: 48svh; }
+  .toggle-sep {
+    width: 22px;
+    height: 1px;
+    background: var(--muted);
+    opacity: 0.5;
   }
 
-  @media (max-width: 980px) {
-    .topnav-fixed nav {
-      position: static;
-      height: auto;
-    }
-
-    .topnav-fixed nav a { height: auto; }
-    .topnav-fixed nav { flex-wrap: wrap; }
-  }
-
-  /* ── Lightbox ── */
-  .lightbox {
+  /* ── Overlays (Index / Thumbs) ── */
+  .room-overlay {
     position: fixed;
     inset: 0;
     z-index: 100;
@@ -521,52 +433,191 @@ const heroImage = optimizedVariantUrl('/images/WORK.jpg', HERO_WIDTH);
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.28s ease;
+    transition: opacity 0.25s ease;
   }
 
-  .lightbox.is-open {
+  .room-overlay.open {
     opacity: 1;
     pointer-events: auto;
   }
 
-  .lightbox-close {
-    position: absolute;
-    top: 24px;
-    right: 28px;
-    z-index: 101;
-    background: none;
-    border: 0;
-    color: var(--muted);
+  /* Instant open for the home→works handoff (no fade on first paint) */
+  .room-overlay.is-instant {
+    transition: none;
+  }
+
+  .series-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  .series-row {
+    width: 100%;
+    padding: 10px 0;
     font-family: var(--font-mono);
-    font-size: 28px;
-    line-height: 1;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
     cursor: pointer;
-    padding: 8px;
     transition: color 0.15s ease;
   }
 
-  .lightbox-close:hover {
+  .series-row:hover,
+  .series-row[aria-pressed='true'] {
     color: var(--fg);
   }
 
-  .lightbox-img {
-    max-width: 92vw;
-    max-height: 90vh;
-    object-fit: contain;
-    border: 1px solid var(--border);
+  /* Entry handoff from home: rows slide in from the right */
+  #indexOverlay.is-entering .series-row {
+    animation: row-in 0.38s cubic-bezier(0.22, 0.8, 0.36, 1) both;
   }
 
-  .lightbox-counter {
+  #indexOverlay.is-entering li:nth-child(1) .series-row { animation-delay: 45ms; }
+  #indexOverlay.is-entering li:nth-child(2) .series-row { animation-delay: 90ms; }
+  #indexOverlay.is-entering li:nth-child(3) .series-row { animation-delay: 135ms; }
+  #indexOverlay.is-entering li:nth-child(4) .series-row { animation-delay: 180ms; }
+  #indexOverlay.is-entering li:nth-child(5) .series-row { animation-delay: 225ms; }
+  #indexOverlay.is-entering li:nth-child(6) .series-row { animation-delay: 270ms; }
+  #indexOverlay.is-entering li:nth-child(7) .series-row { animation-delay: 315ms; }
+  #indexOverlay.is-entering li:nth-child(8) .series-row { animation-delay: 360ms; }
+
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateX(48px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .overlay-close {
     position: absolute;
-    bottom: 28px;
+    bottom: 26px;
     left: 50%;
     transform: translateX(-50%);
     color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 22px;
+    line-height: 1;
+    padding: 8px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .overlay-close:hover { color: var(--fg); }
+
+  /* ── Thumbs overlay ── */
+  .thumbs-overlay { align-items: stretch; justify-content: stretch; }
+
+  .thumbs-scroll {
+    width: 100%;
+    overflow-y: auto;
+    padding: calc(68px + 34px) var(--gutter) 96px;
+  }
+
+  .thumbs-series-title {
+    margin: 34px 0 14px;
+    color: var(--muted);
+  }
+
+  .thumbs-series:first-child .thumbs-series-title { margin-top: 0; }
+
+  .thumbs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+
+  .thumb-cell {
+    aspect-ratio: 1;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+    padding: 0;
+  }
+
+  .thumb-cell:hover { opacity: 1; }
+
+  .thumb-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ── Screensaver ── */
+  .screensaver {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: var(--bg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  .screensaver.on {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: none;
+  }
+
+  .screensaver img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage img { transition: none; }
+    .screensaver,
+    .screensaver img { transition: none; }
+  }
+
+  @media (max-width: 980px) {
+    .topnav-fixed nav {
+      position: static;
+      height: auto;
+      flex-wrap: wrap;
+    }
+
+    .topnav-fixed nav a { height: auto; }
+
+    .stage img {
+      max-width: 86vw;
+      max-height: 54svh;
+    }
+
+    .thumbs-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
   }
 
   @media (max-width: 620px) {
     :root { --gutter: 20px; }
-    h1 { font-size: clamp(66px, 22vw, 104px); }
-    .plate { min-height: 340px; }
+  }
+
+  /* Bare fixed footer on this page — copyright bottom-right, no rule */
+  :global(.pagefoot) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    border-top: none;
+  }
+
+  :global(.pagefoot .foot-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.pagefoot .foot-grid > span) {
+    justify-self: end;
   }
 </style>
