@@ -30,7 +30,9 @@ export function createLatestCrossfade({
       try {
         const prepared = await prepare(value, controller.signal);
         if (controller.signal.aborted || id !== sequence) return false;
-        return await transition(prepared, value, controller.signal);
+        const completed = await transition(prepared, value, controller.signal);
+        if (controller.signal.aborted || id !== sequence) return false;
+        return completed;
       } catch (error) {
         if (!controller.signal.aborted && id === sequence) {
           onError(error, value);
@@ -57,6 +59,66 @@ export function createLatestCrossfade({
   };
 }
 
+export function createAnnouncementState(initialValue = '') {
+  let committed = initialValue;
+  let value = initialValue;
+
+  return {
+    get committed() {
+      return committed;
+    },
+    get value() {
+      return value;
+    },
+    preview(nextValue) {
+      value = nextValue;
+      return value;
+    },
+    commit(nextValue = value) {
+      committed = nextValue;
+      value = nextValue;
+      return value;
+    },
+    rollback() {
+      value = committed;
+      return value;
+    },
+  };
+}
+
+export function waitForImage(image, signal) {
+  const failedToLoad = () => new Error(`Failed to load ${image.src}`);
+
+  if (signal?.aborted) return Promise.resolve();
+  if (image.complete) {
+    if (image.naturalWidth <= 0) return Promise.reject(failedToLoad());
+    return image.decode?.() ?? Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      image.removeEventListener('load', onLoad);
+      image.removeEventListener('error', onError);
+      signal?.removeEventListener('abort', onAbort);
+    };
+    const onLoad = () => {
+      cleanup();
+      Promise.resolve(image.decode?.()).then(resolve, reject);
+    };
+    const onError = () => {
+      cleanup();
+      reject(failedToLoad());
+    };
+    const onAbort = () => {
+      cleanup();
+      resolve();
+    };
+    image.addEventListener('load', onLoad, { once: true });
+    image.addEventListener('error', onError, { once: true });
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 export async function crossfadeLayers({
   outgoing,
   incoming,
@@ -64,6 +126,7 @@ export async function crossfadeLayers({
   reducedMotion = false,
   signal,
   onStart = () => {},
+  onAbort = () => {},
 }) {
   if (signal?.aborted) return false;
   onStart();
@@ -71,6 +134,8 @@ export async function crossfadeLayers({
   if (reducedMotion) {
     outgoing.style.opacity = '0';
     incoming.style.opacity = '1';
+    outgoing.style.opacity = '';
+    incoming.style.opacity = '';
     return true;
   }
 
@@ -92,6 +157,9 @@ export async function crossfadeLayers({
     aborted = true;
     outgoingAnimation.cancel();
     incomingAnimation.cancel();
+    onAbort();
+    outgoing.style.opacity = '';
+    incoming.style.opacity = '';
   };
 
   signal?.addEventListener('abort', abort, { once: true });
@@ -102,14 +170,12 @@ export async function crossfadeLayers({
   signal?.removeEventListener('abort', abort);
 
   if (aborted || signal?.aborted) {
-    outgoing.style.opacity = '1';
-    incoming.style.opacity = '0';
     return false;
   }
 
-  outgoing.style.opacity = '0';
-  incoming.style.opacity = '1';
   outgoingAnimation.cancel();
   incomingAnimation.cancel();
+  outgoing.style.opacity = '';
+  incoming.style.opacity = '';
   return true;
 }

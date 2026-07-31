@@ -47,18 +47,22 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
       <!-- Stage: one plate, page-centered, toggle right below it -->
       <div class="stage" class:list={[{ 'show-desc': firstHasDesc }]}>
         <div class="plate-box">
-          <img
-            id="plateImg"
-            class:list={[{ 'is-hidden': firstHasDesc }]}
-            src={works[0]?.photos[0]?.src}
-            alt={`${works[0]?.shortTitle} — plate 1`}
-          />
-          <p
-            class="plate-caption"
-            class:list={[{ 'is-hidden': firstHasDesc }]}
-            id="plateCaption"
-            aria-live="polite"
-          >{firstCaption}</p>
+          <div class="plate-layer is-active" data-plate-layer aria-hidden={String(firstHasDesc)}>
+            <div class="plate-unit">
+              <img
+                src={works[0]?.photos[0]?.src}
+                alt={`${works[0]?.shortTitle} — plate 1`}
+              />
+              <p class="plate-caption">{firstCaption}</p>
+            </div>
+          </div>
+          <div class="plate-layer" data-plate-layer aria-hidden="true">
+            <div class="plate-unit">
+              <img src="" alt="" />
+              <p class="plate-caption"></p>
+            </div>
+          </div>
+          <p id="plateAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true">{firstHasDesc ? '' : firstCaption}</p>
           <button class="step prev" id="stepPrev" type="button" aria-label="Previous plate"></button>
           <button class="step next" id="stepNext" type="button" aria-label="Next plate"></button>
         </div>
@@ -165,15 +169,26 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
 <script type="application/json" id="worksData" set:html={JSON.stringify(clientWorks)}></script>
 
 <script>
+  import {
+    createAnnouncementState,
+    createLatestCrossfade,
+    crossfadeLayers,
+    waitForImage,
+  } from '../lib/image-crossfade.mjs';
+
   const works = JSON.parse(document.getElementById('worksData')!.textContent!);
 
-  const plateImg = document.getElementById('plateImg') as HTMLImageElement;
-  const plateCaption = document.getElementById('plateCaption')!;
   const stage = document.querySelector('.stage')!;
+  const plateLayers = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-plate-layer]'),
+  );
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const plateDescCn = document.getElementById('plateDescCn')!;
   const plateDescEng = document.getElementById('plateDescEng')!;
   const descCn = document.getElementById('descCn')!;
   const descEng = document.getElementById('descEng')!;
+  const plateAnnouncement = document.getElementById('plateAnnouncement')!;
+  const captionAnnouncement = createAnnouncementState(plateAnnouncement.textContent ?? '');
   const rows = Array.from(document.querySelectorAll<HTMLElement>('.series-row'));
   const modeToggle = document.getElementById('modeToggle')!;
   const indexOverlay = document.getElementById('indexOverlay')!;
@@ -183,40 +198,125 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   let currentSeries = 0;
   // -1 = the series' description plate (shown first when _description files exist)
   let currentPhoto = works[0]?.hasDesc ? -1 : 0;
+  let activeLayerIndex = 0;
+
+  function clearPlateOpacity() {
+    plateLayers.forEach((layer) => { layer.style.opacity = ''; });
+  }
+
+  function previewCaptionAnnouncement(caption: string) {
+    plateAnnouncement.textContent = captionAnnouncement.preview(caption);
+  }
+
+  function commitCaptionAnnouncement(caption: string) {
+    plateAnnouncement.textContent = captionAnnouncement.commit(caption);
+  }
+
+  function rollbackCaptionAnnouncement() {
+    plateAnnouncement.textContent = captionAnnouncement.rollback();
+  }
+
+  function restoreActiveLayerAccessibility() {
+    plateLayers.forEach((layer, index) => {
+      layer.setAttribute('aria-hidden', String(index !== activeLayerIndex));
+    });
+  }
+
+  function activateIncomingLayer(incomingIndex: number) {
+    const outgoing = plateLayers[activeLayerIndex];
+    const incoming = plateLayers[incomingIndex];
+    outgoing.setAttribute('aria-hidden', 'true');
+    incoming.setAttribute('aria-hidden', 'false');
+    outgoing.classList.remove('is-active');
+    incoming.classList.add('is-active');
+    activeLayerIndex = incomingIndex;
+    clearPlateOpacity();
+  }
+
+  function plateTarget() {
+    const work = works[currentSeries];
+    const photo = work.photos[currentPhoto];
+    return {
+      series: currentSeries,
+      photo: currentPhoto,
+      src: photo.src,
+      alt: `${work.title} — plate ${currentPhoto + 1}`,
+      caption:
+        photo.caption ||
+        `${work.fullTitle} — ${String(currentPhoto + 1).padStart(2, '0')}`,
+    };
+  }
+
+  const plateCrossfade = createLatestCrossfade({
+    async prepare(target, signal) {
+      const incomingIndex = 1 - activeLayerIndex;
+      const layer = plateLayers[incomingIndex];
+      const image = layer.querySelector('img') as HTMLImageElement;
+      const caption = layer.querySelector('.plate-caption')!;
+      layer.style.opacity = '0';
+      image.src = target.src;
+      image.alt = target.alt;
+      caption.textContent = target.caption;
+      await waitForImage(image, signal);
+      return { incomingIndex };
+    },
+    async transition({ incomingIndex }, target, signal) {
+      const outgoing = plateLayers[activeLayerIndex];
+      const incoming = plateLayers[incomingIndex];
+      const leavingDescription = stage.classList.contains('show-desc');
+
+      if (leavingDescription) {
+        activateIncomingLayer(incomingIndex);
+        stage.classList.remove('show-desc');
+        commitCaptionAnnouncement(target.caption);
+        return true;
+      }
+
+      const completed = await crossfadeLayers({
+        outgoing,
+        incoming,
+        duration: 220,
+        reducedMotion: reducedMotion.matches,
+        signal,
+        onStart() {
+          outgoing.setAttribute('aria-hidden', 'true');
+          incoming.setAttribute('aria-hidden', 'false');
+          previewCaptionAnnouncement(target.caption);
+        },
+        onAbort() {
+          restoreActiveLayerAccessibility();
+          rollbackCaptionAnnouncement();
+        },
+      });
+      if (completed) {
+        activateIncomingLayer(incomingIndex);
+        commitCaptionAnnouncement(target.caption);
+      }
+      return completed;
+    },
+    onError(error) {
+      clearPlateOpacity();
+      rollbackCaptionAnnouncement();
+      console.error(error);
+    },
+  });
 
   function render() {
     const w = works[currentSeries];
     const showingDesc = currentPhoto < 0;
-    stage.classList.toggle('show-desc', showingDesc);
     descCn.textContent = w.descriptionCn;
     descEng.textContent = w.descriptionEng;
     plateDescCn.classList.toggle('is-empty', !w.descriptionCn);
     plateDescEng.classList.toggle('is-empty', !w.descriptionEng);
-    plateImg.classList.toggle('is-hidden', showingDesc);
-    plateImg.setAttribute('aria-hidden', String(showingDesc));
     if (showingDesc) {
-      // clear any inline opacity so the is-hidden class takes effect
-      plateImg.style.opacity = '';
+      plateCrossfade.cancel();
+      stage.classList.add('show-desc');
+      plateLayers.forEach((layer) => layer.setAttribute('aria-hidden', 'true'));
+      clearPlateOpacity();
+      commitCaptionAnnouncement('');
     } else {
-      const nextSrc = w.photos[currentPhoto].src;
-      plateImg.onload = () => { plateImg.style.opacity = '1'; };
-      if (plateImg.getAttribute('src') === nextSrc) {
-        // src unchanged (e.g. description plate → first photo): no load
-        // event will fire, restore opacity directly
-        plateImg.style.opacity = '1';
-      } else {
-        plateImg.style.opacity = '0';
-        plateImg.src = nextSrc;
-      }
-      plateImg.alt = `${w.title} — plate ${currentPhoto + 1}`;
+      plateCrossfade.request(plateTarget());
     }
-    // caption below the plate: custom text from _captions.txt, else
-    // "Series — NN"; hidden on the description plate
-    plateCaption.textContent = showingDesc
-      ? ''
-      : w.photos[currentPhoto].caption ||
-        `${w.fullTitle} — ${String(currentPhoto + 1).padStart(2, '0')}`;
-    plateCaption.classList.toggle('is-hidden', showingDesc);
     rows.forEach((r, j) => r.setAttribute('aria-pressed', String(j === currentSeries)));
   }
 
@@ -452,22 +552,43 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
 
   .plate-box {
     position: relative;
+    width: 45vw;
+    height: 58svh;
+  }
+
+  .plate-layer {
+    position: absolute;
+    inset: 0;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  .plate-layer.is-active,
+  .plate-layer[aria-hidden='false'] {
+    opacity: 1;
+  }
+
+  .stage.show-desc .plate-layer {
+    opacity: 0 !important;
+  }
+
+  .plate-unit {
+    position: relative;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
   /* JD proportion: roughly 45vw × 58svh, dead center, wide empty canvas */
-  .stage img {
+  .plate-unit img {
+    display: block;
     max-width: 45vw;
     max-height: 58svh;
     object-fit: contain;
-    transition: opacity 0.18s ease;
-  }
-
-  /* Description plate: text only, image faded out but still holding space */
-  .stage img.is-hidden {
-    opacity: 0;
   }
 
   /* Caption pinned just under the plate, whatever its aspect ratio —
@@ -482,10 +603,6 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
     line-height: 1.8;
     color: var(--muted);
     white-space: nowrap;
-  }
-
-  .plate-caption.is-hidden {
-    display: none;
   }
 
   .step {
@@ -754,7 +871,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .stage img { transition: none; }
+    .plate-layer,
     .plate-desc { transition: none; }
     .screensaver,
     .screensaver img { transition: none; }
@@ -769,7 +886,12 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
 
     .topnav-fixed nav a { height: auto; }
 
-    .stage img {
+    .plate-box {
+      width: 86vw;
+      height: 54svh;
+    }
+
+    .plate-unit img {
       max-width: 86vw;
       max-height: 54svh;
     }
