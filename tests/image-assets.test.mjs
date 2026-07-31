@@ -31,8 +31,34 @@ test('discovers work folders and exposes original, display, and thumbnail URLs',
         src: '/images-optimized/Baikal%202024/photo%2001-1600.webp',
         thumb: '/images-optimized/Baikal%202024/photo%2001-320.webp',
         alt: 'Baikal 2024',
+        caption: '',
       },
     ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('reads per-photo captions from _captions.txt', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ph-captions-'));
+  const imageDir = join(root, 'images');
+
+  mkdirSync(join(imageDir, 'Baikal 2024'), { recursive: true });
+  writeFileSync(join(imageDir, 'Baikal 2024', 'photo 01.jpg'), 'fake');
+  writeFileSync(join(imageDir, 'Baikal 2024', 'photo 02.jpg'), 'fake');
+  writeFileSync(
+    join(imageDir, 'Baikal 2024', '_captions.txt'),
+    '# comment\nphoto 01.jpg = 湖边的木屋\nphoto 02.jpg = Wooden hut = by the lake\nignored line\n',
+  );
+
+  try {
+    const works = discoverWorks({
+      imageDir,
+      optimizedBasePath: '/images-optimized',
+    });
+
+    assert.equal(works[0].photos[0].caption, '湖边的木屋');
+    assert.equal(works[0].photos[1].caption, 'Wooden hut = by the lake');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -43,6 +69,32 @@ test('builds optimized variant URLs for standalone images', () => {
     optimizedVariantUrl('/images/mqm6vcct-DJI_20221008120715_0011_D.jpg', 2400),
     '/images-optimized/mqm6vcct-DJI_20221008120715_0011_D-2400.webp',
   );
+});
+
+test('reads sidecar CN/ENG description files from the work folder', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ph-desc-'));
+  const imageDir = join(root, 'images');
+
+  mkdirSync(join(imageDir, 'Baikal 2024'), { recursive: true });
+  mkdirSync(join(imageDir, 'Tokyo 2024'), { recursive: true });
+  writeFileSync(join(imageDir, 'Baikal 2024', 'photo 01.jpg'), 'fake');
+  writeFileSync(join(imageDir, 'Baikal 2024', '_description_cn.txt'), '  湖水很蓝\n');
+  writeFileSync(join(imageDir, 'Baikal 2024', '_description_eng.txt'), 'Blue lake\n');
+  writeFileSync(join(imageDir, 'Tokyo 2024', 'photo 01.jpg'), 'fake');
+
+  try {
+    const works = discoverWorks({
+      imageDir,
+      optimizedBasePath: '/images-optimized',
+    });
+
+    assert.equal(works[0].descriptionCn, '湖水很蓝');
+    assert.equal(works[0].descriptionEng, 'Blue lake');
+    assert.equal(works[1].descriptionCn, '');
+    assert.equal(works[1].descriptionEng, '');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('discovers works from committed optimized images when source images are unavailable', () => {
@@ -69,6 +121,7 @@ test('discovers works from committed optimized images when source images are una
         src: '/images-optimized/Tokyo%202024/photo%2001-1600.webp',
         thumb: '/images-optimized/Tokyo%202024/photo%2001-320.webp',
         alt: 'Tokyo 2024',
+        caption: '',
       },
     ]);
   } finally {

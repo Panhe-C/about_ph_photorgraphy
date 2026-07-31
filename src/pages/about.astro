@@ -143,7 +143,8 @@ const heroImage = optimizedVariantUrl('/images/ABOUT.jpg', HERO_WIDTH);
     display: flex;
     position: fixed;
     top: 0;
-    right: clamp(240px, 20vw, 420px);
+    /* match the home page nav position (clears the theme-toggle icon) */
+    right: calc(var(--gutter) + 56px);
     z-index: 21;
     height: 68px;
     justify-content: flex-end;

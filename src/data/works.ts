@@ -4,6 +4,7 @@ export interface WorkPhoto {
   src: string;
   thumb: string;
   alt: string;
+  caption: string;
 }
 
 export interface Work {
@@ -13,6 +14,8 @@ export interface Work {
   year: string;
   ratio: string;
   print: string;
+  descriptionCn: string;
+  descriptionEng: string;
   photos: WorkPhoto[];
 }
 
