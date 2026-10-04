@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
 export const DISPLAY_WIDTH = 1600;
@@ -9,6 +9,29 @@ const IMAGE_PATTERN = /\.(jpg|jpeg|png|webp|avif)$/i;
 
 export function isImageFile(fileName) {
   return IMAGE_PATTERN.test(fileName);
+}
+
+function readDescription(folderPath, fileName) {
+  const filePath = join(folderPath, fileName);
+  if (!existsSync(filePath)) return '';
+  return readFileSync(filePath, 'utf8').trim();
+}
+
+// _captions.txt: one "文件名 = 说明文字" per line, '#' starts a comment
+function readCaptions(folderPath) {
+  const filePath = join(folderPath, '_captions.txt');
+  if (!existsSync(filePath)) return {};
+  const captions = {};
+  for (const line of readFileSync(filePath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 0) continue;
+    const name = trimmed.slice(0, eq).trim();
+    const text = trimmed.slice(eq + 1).trim();
+    if (name && text) captions[name] = text;
+  }
+  return captions;
 }
 
 export function folderToTitle(folder) {
@@ -51,6 +74,7 @@ export function discoverWorks({
     .map((folder) => {
       const title = folderToTitle(folder);
       const folderPath = join(imageDir, folder);
+      const captions = readCaptions(folderPath);
       const photos = readdirSync(folderPath)
         .filter(isImageFile)
         .sort()
@@ -61,6 +85,7 @@ export function discoverWorks({
             src: optimizedVariantUrl(optimizedOriginal, DISPLAY_WIDTH),
             thumb: optimizedVariantUrl(optimizedOriginal, THUMB_WIDTH),
             alt: title,
+            caption: captions[fileName] ?? '',
           };
         });
 
@@ -71,6 +96,8 @@ export function discoverWorks({
         year: '2023',
         ratio: '3:2',
         print: 'Pigment proof',
+        descriptionCn: readDescription(folderPath, '_description_cn.txt'),
+        descriptionEng: readDescription(folderPath, '_description_eng.txt'),
         photos,
       };
     })
@@ -115,6 +142,7 @@ export function discoverOptimizedWorks({
             src: publicImageUrl(optimizedBasePath, folder, displayName),
             thumb: publicImageUrl(optimizedBasePath, folder, thumbName),
             alt: title,
+            caption: '',
           };
         });
 
@@ -125,6 +153,9 @@ export function discoverOptimizedWorks({
         year: '2023',
         ratio: '3:2',
         print: 'Pigment proof',
+        // source-images is unavailable on this path, so no sidecar descriptions
+        descriptionCn: '',
+        descriptionEng: '',
         photos,
       };
     })

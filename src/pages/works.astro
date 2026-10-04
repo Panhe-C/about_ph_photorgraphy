@@ -16,8 +16,15 @@ const totalPlates = works.reduce((n, w) => n + w.photos.length, 0);
 
 const clientWorks = works.map((w) => ({
   title: w.shortTitle,
-  photos: w.photos.map((p) => ({ src: p.src, thumb: p.thumb })),
+  fullTitle: w.title,
+  descriptionCn: w.descriptionCn,
+  descriptionEng: w.descriptionEng,
+  hasDesc: Boolean(w.descriptionCn || w.descriptionEng),
+  photos: w.photos.map((p) => ({ src: p.src, thumb: p.thumb, caption: p.caption })),
 }));
+
+const firstHasDesc = Boolean(works[0]?.descriptionCn || works[0]?.descriptionEng);
+const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
 ---
 
 <BaseLayout
@@ -38,21 +45,54 @@ const clientWorks = works.map((w) => ({
   <main id="content">
     <section class="works-room" data-od-id="works-room">
       <!-- Stage: one plate, page-centered, toggle right below it -->
-      <div class="stage">
+      <div class="stage" class:list={[{ 'show-desc': firstHasDesc }]}>
         <div class="plate-box">
-          <img
-            id="plateImg"
-            src={works[0]?.photos[0]?.src}
-            alt={`${works[0]?.shortTitle} — plate 1`}
-          />
+          <div class="plate-layer is-active" data-plate-layer aria-hidden={String(firstHasDesc)}>
+            <div class="plate-unit">
+              <img
+                src={works[0]?.photos[0]?.src}
+                alt={`${works[0]?.shortTitle} — plate 1`}
+              />
+              <p class="plate-caption">{firstCaption}</p>
+            </div>
+          </div>
+          <div class="plate-layer" data-plate-layer aria-hidden="true">
+            <div class="plate-unit">
+              <img src="" alt="" />
+              <p class="plate-caption"></p>
+            </div>
+          </div>
+          <p id="plateAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true">{firstHasDesc ? '' : firstCaption}</p>
           <button class="step prev" id="stepPrev" type="button" aria-label="Previous plate"></button>
           <button class="step next" id="stepNext" type="button" aria-label="Next plate"></button>
         </div>
         <div class="room-toggle">
-          <button class="toggle-btn" id="indexToggle" type="button" aria-expanded="false" aria-controls="indexOverlay">Index</button>
-          <span class="toggle-sep" aria-hidden="true"></span>
-          <button class="toggle-btn" id="thumbsToggle" type="button" aria-expanded="false" aria-controls="thumbsOverlay">Thumbs</button>
+          <button
+            class="toggle-btn"
+            id="modeToggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="indexOverlay thumbsOverlay"
+          >Index</button>
         </div>
+
+        <!-- Series description: CN left of the plate, ENG right -->
+        <aside
+          class="plate-desc plate-desc-cn"
+          class:list={[{ 'is-empty': !works[0]?.descriptionCn }]}
+          id="plateDescCn"
+          aria-live="polite"
+        >
+          <p class="desc-cn" id="descCn">{works[0]?.descriptionCn}</p>
+        </aside>
+        <aside
+          class="plate-desc plate-desc-eng"
+          class:list={[{ 'is-empty': !works[0]?.descriptionEng }]}
+          id="plateDescEng"
+          aria-live="polite"
+        >
+          <p class="desc-eng" id="descEng">{works[0]?.descriptionEng}</p>
+        </aside>
       </div>
 
       <!-- Index overlay: bare series titles -->
@@ -83,7 +123,7 @@ const clientWorks = works.map((w) => ({
           var ovl = document.getElementById('indexOverlay');
           ovl.classList.add('open', 'is-instant');
           ovl.setAttribute('aria-hidden', 'false');
-          document.getElementById('indexToggle').setAttribute('aria-expanded', 'true');
+          document.getElementById('modeToggle').setAttribute('aria-expanded', 'true');
           document.body.style.overflow = 'hidden';
           if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
             ovl.classList.add('is-entering');
@@ -129,26 +169,154 @@ const clientWorks = works.map((w) => ({
 <script type="application/json" id="worksData" set:html={JSON.stringify(clientWorks)}></script>
 
 <script>
+  import {
+    createAnnouncementState,
+    createLatestCrossfade,
+    crossfadeLayers,
+    waitForImage,
+  } from '../lib/image-crossfade.mjs';
+
   const works = JSON.parse(document.getElementById('worksData')!.textContent!);
 
-  const plateImg = document.getElementById('plateImg') as HTMLImageElement;
+  const stage = document.querySelector('.stage')!;
+  const plateLayers = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-plate-layer]'),
+  );
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const plateDescCn = document.getElementById('plateDescCn')!;
+  const plateDescEng = document.getElementById('plateDescEng')!;
+  const descCn = document.getElementById('descCn')!;
+  const descEng = document.getElementById('descEng')!;
+  const plateAnnouncement = document.getElementById('plateAnnouncement')!;
+  const captionAnnouncement = createAnnouncementState(plateAnnouncement.textContent ?? '');
   const rows = Array.from(document.querySelectorAll<HTMLElement>('.series-row'));
-  const indexToggle = document.getElementById('indexToggle')!;
-  const thumbsToggle = document.getElementById('thumbsToggle')!;
+  const modeToggle = document.getElementById('modeToggle')!;
   const indexOverlay = document.getElementById('indexOverlay')!;
   const thumbsOverlay = document.getElementById('thumbsOverlay')!;
   const overlays = [indexOverlay, thumbsOverlay];
-  const toggles = [indexToggle, thumbsToggle];
 
   let currentSeries = 0;
-  let currentPhoto = 0;
+  // -1 = the series' description plate (shown first when _description files exist)
+  let currentPhoto = works[0]?.hasDesc ? -1 : 0;
+  let activeLayerIndex = 0;
+
+  function clearPlateOpacity() {
+    plateLayers.forEach((layer) => { layer.style.opacity = ''; });
+  }
+
+  function previewCaptionAnnouncement(caption: string) {
+    plateAnnouncement.textContent = captionAnnouncement.preview(caption);
+  }
+
+  function commitCaptionAnnouncement(caption: string) {
+    plateAnnouncement.textContent = captionAnnouncement.commit(caption);
+  }
+
+  function rollbackCaptionAnnouncement() {
+    plateAnnouncement.textContent = captionAnnouncement.rollback();
+  }
+
+  function restoreActiveLayerAccessibility() {
+    plateLayers.forEach((layer, index) => {
+      layer.setAttribute('aria-hidden', String(index !== activeLayerIndex));
+    });
+  }
+
+  function activateIncomingLayer(incomingIndex: number) {
+    const outgoing = plateLayers[activeLayerIndex];
+    const incoming = plateLayers[incomingIndex];
+    outgoing.setAttribute('aria-hidden', 'true');
+    incoming.setAttribute('aria-hidden', 'false');
+    outgoing.classList.remove('is-active');
+    incoming.classList.add('is-active');
+    activeLayerIndex = incomingIndex;
+    clearPlateOpacity();
+  }
+
+  function plateTarget() {
+    const work = works[currentSeries];
+    const photo = work.photos[currentPhoto];
+    return {
+      series: currentSeries,
+      photo: currentPhoto,
+      src: photo.src,
+      alt: `${work.title} — plate ${currentPhoto + 1}`,
+      caption:
+        photo.caption ||
+        `${work.fullTitle} — ${String(currentPhoto + 1).padStart(2, '0')}`,
+    };
+  }
+
+  const plateCrossfade = createLatestCrossfade({
+    async prepare(target, signal) {
+      const incomingIndex = 1 - activeLayerIndex;
+      const layer = plateLayers[incomingIndex];
+      const image = layer.querySelector('img') as HTMLImageElement;
+      const caption = layer.querySelector('.plate-caption')!;
+      layer.style.opacity = '0';
+      image.src = target.src;
+      image.alt = target.alt;
+      caption.textContent = target.caption;
+      await waitForImage(image, signal);
+      return { incomingIndex };
+    },
+    async transition({ incomingIndex }, target, signal) {
+      const outgoing = plateLayers[activeLayerIndex];
+      const incoming = plateLayers[incomingIndex];
+      const leavingDescription = stage.classList.contains('show-desc');
+
+      if (leavingDescription) {
+        activateIncomingLayer(incomingIndex);
+        stage.classList.remove('show-desc');
+        commitCaptionAnnouncement(target.caption);
+        return true;
+      }
+
+      const completed = await crossfadeLayers({
+        outgoing,
+        incoming,
+        duration: 220,
+        reducedMotion: reducedMotion.matches,
+        signal,
+        onStart() {
+          outgoing.setAttribute('aria-hidden', 'true');
+          incoming.setAttribute('aria-hidden', 'false');
+          previewCaptionAnnouncement(target.caption);
+        },
+        onAbort() {
+          restoreActiveLayerAccessibility();
+          rollbackCaptionAnnouncement();
+        },
+      });
+      if (completed) {
+        activateIncomingLayer(incomingIndex);
+        commitCaptionAnnouncement(target.caption);
+      }
+      return completed;
+    },
+    onError(error) {
+      clearPlateOpacity();
+      rollbackCaptionAnnouncement();
+      console.error(error);
+    },
+  });
 
   function render() {
     const w = works[currentSeries];
-    plateImg.style.opacity = '0';
-    plateImg.onload = () => { plateImg.style.opacity = '1'; };
-    plateImg.src = w.photos[currentPhoto].src;
-    plateImg.alt = `${w.title} — plate ${currentPhoto + 1}`;
+    const showingDesc = currentPhoto < 0;
+    descCn.textContent = w.descriptionCn;
+    descEng.textContent = w.descriptionEng;
+    plateDescCn.classList.toggle('is-empty', !w.descriptionCn);
+    plateDescEng.classList.toggle('is-empty', !w.descriptionEng);
+    if (showingDesc) {
+      plateCrossfade.cancel();
+      stage.classList.add('show-desc');
+      plateLayers.forEach((layer) => layer.setAttribute('aria-hidden', 'true'));
+      clearPlateOpacity();
+      commitCaptionAnnouncement('');
+    } else {
+      plateCrossfade.request(plateTarget());
+    }
     rows.forEach((r, j) => r.setAttribute('aria-pressed', String(j === currentSeries)));
   }
 
@@ -159,43 +327,55 @@ const clientWorks = works.map((w) => ({
     history.replaceState(null, '', `#${series}`);
   }
 
+  // Photo cycle per series: optional description plate, then plates 1..n
   function stepPhoto(dir: number) {
-    const len = works[currentSeries].photos.length;
-    goTo(currentSeries, (currentPhoto + dir + len) % len);
+    const w = works[currentSeries];
+    const start = w.hasDesc ? -1 : 0;
+    const total = w.photos.length + (w.hasDesc ? 1 : 0);
+    const idx = (currentPhoto - start + dir + total) % total;
+    goTo(currentSeries, idx + start);
   }
 
   function stepSeries(dir: number) {
-    goTo((currentSeries + dir + works.length) % works.length, 0);
+    const next = (currentSeries + dir + works.length) % works.length;
+    goTo(next, works[next].hasDesc ? -1 : 0);
   }
 
-  /* ── Overlays (Index / Thumbs) ── */
-  function openOverlay(el: HTMLElement, btn: HTMLElement) {
+  /* ── Overlays: one button switching Index ⇄ Thumbs; closing happens
+     via the overlay's × button, ESC, or clicking the backdrop ── */
+  function syncToggle() {
+    const indexOpen = indexOverlay.classList.contains('open');
+    const thumbsOpen = thumbsOverlay.classList.contains('open');
+    modeToggle.textContent = indexOpen ? 'Thumbs' : 'Index';
+    modeToggle.setAttribute('aria-expanded', String(indexOpen || thumbsOpen));
+    // the button floats above overlays; over the scrolling thumbs grid it
+    // overlaps the images, so hide it there (close via ×, ESC, or backdrop)
+    modeToggle.classList.toggle('is-hidden', thumbsOpen);
+  }
+
+  function openOverlay(el: HTMLElement) {
     overlays.forEach((o) => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); });
-    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
     el.classList.add('open');
     el.setAttribute('aria-hidden', 'false');
-    btn.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
+    syncToggle();
   }
   function closeOverlays() {
     overlays.forEach((o) => { o.classList.remove('open'); o.setAttribute('aria-hidden', 'true'); });
-    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
     document.body.style.overflow = '';
+    syncToggle();
   }
   const anyOverlayOpen = () => overlays.some((o) => o.classList.contains('open'));
 
-  indexToggle.addEventListener('click', () => {
-    indexOverlay.classList.contains('open') ? closeOverlays() : openOverlay(indexOverlay, indexToggle);
-  });
-  thumbsToggle.addEventListener('click', () => {
-    thumbsOverlay.classList.contains('open') ? closeOverlays() : openOverlay(thumbsOverlay, thumbsToggle);
+  modeToggle.addEventListener('click', () => {
+    openOverlay(indexOverlay.classList.contains('open') ? thumbsOverlay : indexOverlay);
   });
   document.getElementById('indexClose')!.addEventListener('click', closeOverlays);
   document.getElementById('thumbsClose')!.addEventListener('click', closeOverlays);
   overlays.forEach((o) => o.addEventListener('click', (e) => { if (e.target === o) closeOverlays(); }));
 
   rows.forEach((row, i) => {
-    row.addEventListener('click', () => { goTo(i, 0); closeOverlays(); });
+    row.addEventListener('click', () => { goTo(i, works[i].hasDesc ? -1 : 0); closeOverlays(); });
   });
   document.querySelectorAll<HTMLElement>('.thumb-cell').forEach((cell) => {
     cell.addEventListener('click', () => {
@@ -230,6 +410,8 @@ const clientWorks = works.map((w) => ({
   function startScreensaver() {
     ssActive = true;
     ssIndex = allPhotos.findIndex((p) => p.si === currentSeries && p.pi === currentPhoto);
+    if (ssIndex < 0) ssIndex = allPhotos.findIndex((p) => p.si === currentSeries);
+    if (ssIndex < 0) ssIndex = 0;
     ssImg.src = allPhotos[ssIndex].src;
     ssEl.classList.add('on');
     ssEl.setAttribute('aria-hidden', 'false');
@@ -280,10 +462,11 @@ const clientWorks = works.map((w) => ({
     else if (e.key === 'ArrowUp') { e.preventDefault(); stepSeries(-1); }
   });
 
-  // Deep link (e.g. from the home page index)
+  // Deep link (e.g. from the home page index): land on the description
+  // plate first when the series has one
   const hashIndex = parseInt(location.hash.slice(1), 10);
   if (hashIndex >= 0 && hashIndex < works.length) {
-    goTo(hashIndex, 0);
+    goTo(hashIndex, works[hashIndex].hasDesc ? -1 : 0);
   }
 
   // Arriving from home: the inline script already opened the overlay
@@ -293,6 +476,7 @@ const clientWorks = works.map((w) => ({
     setTimeout(() => indexOverlay.classList.remove('is-entering', 'is-instant'), 1000);
     history.replaceState(null, '', `${location.pathname}${location.hash}`);
   }
+  syncToggle();
 </script>
 
 <style>
@@ -322,7 +506,8 @@ const clientWorks = works.map((w) => ({
     display: flex;
     position: fixed;
     top: 0;
-    right: clamp(240px, 20vw, 420px);
+    /* match the home page nav position (clears the theme-toggle icon) */
+    right: calc(var(--gutter) + 56px);
     z-index: 21;
     height: 68px;
     justify-content: flex-end;
@@ -367,17 +552,57 @@ const clientWorks = works.map((w) => ({
 
   .plate-box {
     position: relative;
+    width: 45vw;
+    height: 58svh;
+  }
+
+  .plate-layer {
+    position: absolute;
+    inset: 0;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  .plate-layer.is-active,
+  .plate-layer[aria-hidden='false'] {
+    opacity: 1;
+  }
+
+  .stage.show-desc .plate-layer {
+    opacity: 0 !important;
+  }
+
+  .plate-unit {
+    position: relative;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
   /* JD proportion: roughly 45vw × 58svh, dead center, wide empty canvas */
-  .stage img {
+  .plate-unit img {
+    display: block;
     max-width: 45vw;
     max-height: 58svh;
     object-fit: contain;
-    transition: opacity 0.18s ease;
+  }
+
+  /* Caption pinned just under the plate, whatever its aspect ratio —
+     same typeface as the ENG description on the right */
+  .plate-caption {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 14px 0 0;
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--muted);
+    white-space: nowrap;
   }
 
   .step {
@@ -394,7 +619,15 @@ const clientWorks = works.map((w) => ({
   .room-toggle {
     display: flex;
     align-items: center;
-    gap: 14px;
+    /* pinned to the bottom-left corner, on the same baseline as the fixed
+       footer's copyright (bottom-right) — padding-block 34px, minus the
+       button's own 4px vertical padding */
+    position: fixed;
+    bottom: 30px;
+    left: var(--gutter);
+    /* keep it above the overlays (z-index 100) so the Index ⇄ Thumbs
+       switch stays reachable while one is open */
+    z-index: 150;
   }
 
   .toggle-btn {
@@ -413,11 +646,72 @@ const clientWorks = works.map((w) => ({
     color: var(--fg);
   }
 
-  .toggle-sep {
-    width: 22px;
-    height: 1px;
-    background: var(--muted);
-    opacity: 0.5;
+  .toggle-btn.is-hidden {
+    visibility: hidden;
+  }
+
+  /* ── Series description: CN left of the plate, ENG right ── */
+  .plate-desc {
+    position: absolute;
+    /* stage center sits below the plate center (footer clearance shifts
+       the image up) — offset so the text tracks the image */
+    top: calc(50% - 44px);
+    transform: translateY(-50%);
+    width: min(240px, 20vw);
+    text-align: left;
+    transition:
+      left 0.55s cubic-bezier(0.22, 0.8, 0.36, 1),
+      transform 0.55s cubic-bezier(0.22, 0.8, 0.36, 1),
+      opacity 0.4s ease;
+  }
+
+  /* Descriptions only live on the description plate; browsing photos
+     fades them out as they drift to the sides */
+  .stage:not(.show-desc) .plate-desc {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .plate-desc-cn {
+    left: var(--gutter);
+  }
+
+  .plate-desc-eng {
+    left: calc(100% - var(--gutter) - min(240px, 20vw));
+  }
+
+  /* Description plate: both blocks meet at the page center, CN above ENG */
+  .stage.show-desc .plate-desc-cn {
+    left: 50%;
+    transform: translate(-50%, calc(-100% - 14px));
+  }
+
+  .stage.show-desc .plate-desc-eng {
+    left: 50%;
+    transform: translate(-50%, 14px);
+  }
+
+  .plate-desc.is-empty {
+    display: none;
+  }
+
+  .desc-cn,
+  .desc-eng {
+    margin: 0;
+    line-height: 1.8;
+  }
+
+  .desc-cn {
+    font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--fg);
+  }
+
+  .desc-eng {
+    font-size: 11px;
+    color: var(--muted);
   }
 
   /* ── Overlays (Index / Thumbs) ── */
@@ -577,7 +871,8 @@ const clientWorks = works.map((w) => ({
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .stage img { transition: none; }
+    .plate-layer,
+    .plate-desc { transition: none; }
     .screensaver,
     .screensaver img { transition: none; }
   }
@@ -591,10 +886,39 @@ const clientWorks = works.map((w) => ({
 
     .topnav-fixed nav a { height: auto; }
 
-    .stage img {
+    .plate-box {
+      width: 86vw;
+      height: 54svh;
+    }
+
+    .plate-unit img {
       max-width: 86vw;
       max-height: 54svh;
     }
+
+    .plate-desc {
+      position: static;
+      transform: none;
+      width: min(86vw, 420px);
+    }
+
+    .stage.show-desc .plate-desc-cn,
+    .stage.show-desc .plate-desc-eng {
+      left: auto;
+      transform: none;
+    }
+
+    /* hidden blocks must not take up flow space on photo pages */
+    .stage:not(.show-desc) .plate-desc {
+      display: none;
+    }
+
+    .plate-desc-eng {
+      margin-top: 10px;
+    }
+
+    .desc-cn { font-size: 12px; }
+    .desc-eng { font-size: 10px; }
 
     .thumbs-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
   }
