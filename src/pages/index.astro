@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
-import FontSizePreview from '../components/FontSizePreview.astro';
 import { getWorks } from '../data/works';
 import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
@@ -39,8 +38,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
   </main>
 
   <Footer pageLabel="Photography" tagline="P.H. — rooms, thresholds, peripheral light" />
-  {import.meta.env.DEV && <FontSizePreview />}
-
 
   <!-- Handoff veil: fades in as the titles slide out, so the old page never
        reappears bare while the browser loads /works -->
@@ -144,7 +141,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     max-width: calc(100% - var(--title-offset));
     margin-inline-start: var(--title-offset);
     font-family: var(--font-mono);
-    font-size: var(--project-title-size, clamp(14px, 1.6vw, 24px));
+    font-size: 16px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--fg);
@@ -174,6 +171,9 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
   }
 
   .hero-core {
+    /* Approved at 1920 × 934: move the list right 287px and down 67px. */
+    padding-inline-start: clamp(0px, 14.9479167vw, 287px);
+    padding-top: clamp(0px, 7.1734476svh, 67px);
     min-width: 0;
   }
 
@@ -189,9 +189,12 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     }
 
     .titles-nav a {
-      font-size: var(--project-title-size, clamp(13px, 3.2vw, 18px));
       letter-spacing: 0.04em;
     }
+    .hero-core {
+      padding-inline-start: 0;
+    }
+
 
     .home-stage {
       background-attachment: scroll;
