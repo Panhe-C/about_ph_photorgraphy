@@ -1,0 +1,132 @@
+<aside class="font-size-preview" aria-label="项目字号调整" hidden>
+  <div class="preview-heading">
+    <label for="project-font-size">项目字号</label>
+    <output for="project-font-size" id="project-font-size-value"></output>
+  </div>
+  <input id="project-font-size" type="range" min="10" max="40" step="0.5" />
+  <p>拖动实时预览，调好后把数值发给我。</p>
+  <div class="preview-actions">
+    <button type="button" data-font-reset>恢复默认</button>
+    <button type="button" data-font-copy>复制字号</button>
+  </div>
+  <span class="preview-status" role="status"></span>
+</aside>
+
+<style>
+  .font-size-preview[hidden] { display: none; }
+
+  .font-size-preview {
+    position: fixed;
+    right: var(--gutter);
+    bottom: 24px;
+    z-index: 35;
+    width: min(280px, calc(100vw - 40px));
+    padding: 18px;
+    border: 1px solid var(--border);
+    background: color-mix(in oklch, var(--bg) 92%, transparent);
+    color: var(--fg);
+    backdrop-filter: blur(12px);
+    font-size: 12px;
+  }
+
+  .preview-heading, .preview-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  output {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input {
+    display: block;
+    width: 100%;
+    min-height: 32px;
+    margin: 10px 0;
+    accent-color: var(--fg);
+    cursor: pointer;
+  }
+
+  p { color: var(--muted); }
+  .preview-actions { margin-top: 16px; }
+
+  button {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--muted);
+  }
+
+  button:focus-visible {
+    outline: 1px solid var(--fg);
+    outline-offset: 4px;
+  }
+
+  .preview-status:empty { display: none; }
+  .preview-status { display: block; margin-top: 12px; color: var(--muted); }
+</style>
+
+<script>
+  const panel = document.querySelector<HTMLElement>('.font-size-preview');
+  const titles = document.querySelector<HTMLElement>('.titles-nav');
+  const slider = document.querySelector<HTMLInputElement>('#project-font-size');
+  const value = document.querySelector<HTMLOutputElement>('#project-font-size-value');
+
+  if (panel && titles && slider && value) {
+    const storageKey = 'ph:home:project-font-size';
+    const status = panel.querySelector<HTMLElement>('.preview-status');
+    const firstTitle = titles.querySelector('a');
+    let chosenSize: number | null = null;
+
+    const sync = () => {
+      if (!firstTitle) return;
+      const size = chosenSize ?? Math.round(parseFloat(getComputedStyle(firstTitle).fontSize) * 2) / 2;
+      slider.value = String(size);
+      value.value = `${size} px`;
+      slider.setAttribute('aria-valuetext', `${size} 像素`);
+    };
+
+    const apply = (size: number) => {
+      chosenSize = size;
+      titles.style.setProperty('--project-title-size', `${size}px`);
+      sync();
+    };
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        const size = Number(saved);
+        if (Number.isFinite(size) && size >= 10 && size <= 40) apply(size);
+      }
+    } catch { /* Preview still works when storage is unavailable. */ }
+
+    slider.addEventListener('input', () => {
+      apply(slider.valueAsNumber);
+      if (status) status.textContent = '';
+      try { localStorage.setItem(storageKey, String(chosenSize)); } catch {}
+    });
+
+    panel.querySelector('[data-font-reset]')?.addEventListener('click', () => {
+      chosenSize = null;
+      titles.style.removeProperty('--project-title-size');
+      try { localStorage.removeItem(storageKey); } catch {}
+      if (status) status.textContent = '';
+      sync();
+    });
+
+    panel.querySelector('[data-font-copy]')?.addEventListener('click', async () => {
+      const text = `项目字号：${value.value}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        if (status) status.textContent = `已复制：${value.value}`;
+      } catch {
+        if (status) status.textContent = `请直接把 ${value.value} 发给我。`;
+      }
+    });
+
+    window.addEventListener('resize', sync);
+    sync();
+    panel.hidden = false;
+  }
+</script>

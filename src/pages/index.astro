@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
+import FontSizePreview from '../components/FontSizePreview.astro';
 import { getWorks } from '../data/works';
 import { HERO_WIDTH, optimizedVariantUrl } from '../lib/image-assets.mjs';
 
@@ -38,6 +39,8 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
   </main>
 
   <Footer pageLabel="Photography" tagline="P.H. — rooms, thresholds, peripheral light" />
+  {import.meta.env.DEV && <FontSizePreview />}
+
 
   <!-- Handoff veil: fades in as the titles slide out, so the old page never
        reappears bare while the browser loads /works -->
@@ -141,7 +144,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     max-width: calc(100% - var(--title-offset));
     margin-inline-start: var(--title-offset);
     font-family: var(--font-mono);
-    font-size: clamp(14px, 1.6vw, 24px);
+    font-size: var(--project-title-size, clamp(14px, 1.6vw, 24px));
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--fg);
@@ -186,7 +189,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     }
 
     .titles-nav a {
-      font-size: clamp(13px, 3.2vw, 18px);
+      font-size: var(--project-title-size, clamp(13px, 3.2vw, 18px));
       letter-spacing: 0.04em;
     }
 
