@@ -10,14 +10,14 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
 
 <BaseLayout
   title="Home"
-  description="P.H. — A quiet photographic index of rooms, edges, glass, and late light."
+  description="P.H. — Photography and travel projects."
 >
   <!-- Fixed transparent nav — exact match to lin-zhaoye-photography.html -->
   <header class="topnav-fixed" data-od-id="topnav">
     <div class="topnav-fixed-inner">
       <nav aria-label="Primary navigation">
         <a href="/" class="nav-home" aria-current="page">HOME</a>
-        <a href="/works" class="nav-work">WORK</a>
+        <a href="/works?index" class="nav-work">WORK</a>
         <a href="/about" class="nav-about">ABOUT</a>
       </nav>
     </div>
@@ -27,31 +27,18 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     <!-- ── Hero ── -->
     <section class="container home-stage" data-od-id="home-hero" style={`background-color: var(--bg); background-image: var(--hero-overlay), url('${heroImage}'); background-size: auto, cover; background-position: center, center; background-repeat: no-repeat, no-repeat;`}>
       <div class="hero-core">
-        <h1 class="hero-title">About P.H.</h1>
-        <div class="plate hero-plate">
-          <span>Viewing plate 01 / threshold room</span>
-        </div>
-        <div class="hero-bottom">
-          <p class="lead">A quiet photographic index of rooms, edges, glass, and late light.</p>
-          <a class="btn" href="/works">View work</a>
-        </div>
-      </div>
-
-      <aside class="edge-panel edge-right" aria-label="Works preview">
+        <h1 class="sr-only">Photography projects</h1>
         <nav aria-label="Portfolio titles" class="titles-nav">
           {works.map((w, i) => (
-            <a href={`/works#${i}`}>{w.title}</a>
+            <a href={`/works/${i}`} data-entry-image={w.descriptionCn || w.descriptionEng ? undefined : w.photos[0]?.src}>{w.title}</a>
           ))}
         </nav>
-      </aside>
+      </div>
     </section>
   </main>
 
   <Footer pageLabel="Photography" tagline="P.H. — rooms, thresholds, peripheral light" />
 
-  <!-- Handoff veil: fades in as the titles slide out, so the old page never
-       reappears bare while the browser loads /works -->
-  <div class="handoff-veil" aria-hidden="true"></div>
 </BaseLayout>
 
 <style>
@@ -114,13 +101,8 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     padding-top: calc(68px + clamp(34px, 5vw, 82px));
     padding-bottom: clamp(34px, 5vw, 82px);
     background-attachment: scroll, fixed;
-    display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(170px, 0.65fr);
-    gap: var(--gap-lg);
-    align-items: stretch;
-    /* fade in on arrival, fade out on the home→works handoff */
+    /* Fade in on arrival; page changes use the shared view transition. */
     animation: hero-in 0.6s ease backwards;
-    transition: opacity 0.42s ease;
   }
 
   @keyframes hero-in {
@@ -128,136 +110,62 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     to { opacity: 1; }
   }
 
-  .home-stage.is-fading {
-    opacity: 0;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .home-stage {
       animation: none;
-      transition: none;
     }
-  }
-
-  .edge-panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 68svh;
-    color: var(--muted);
-  }
-
-  .edge-right {
-    justify-content: flex-start;
-    align-items: flex-end;
-    text-align: right;
-    min-height: 0;
   }
 
   .titles-nav {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 18px;
-    width: fit-content;
-    max-width: min(100%, 22ch);
-    margin-inline-start: auto;
+    align-items: flex-start;
+    gap: clamp(16px, 2vw, 26px);
+    width: min(70vw, 860px);
+    max-width: 100%;
     padding-top: 4px;
   }
 
   .titles-nav a {
     display: block;
+    width: fit-content;
+    max-width: calc(100% - var(--title-offset));
+    margin-inline-start: var(--title-offset);
     font-family: var(--font-mono);
-    font-size: var(--fs-meta);
-    letter-spacing: 0.14em;
+    font-size: 16px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--fg);
     line-height: 1.35;
-    text-align: right;
+    text-align: left;
     text-wrap: balance;
     text-decoration: none;
+    text-shadow: 0 1px 8px color-mix(in oklch, var(--bg) 55%, transparent);
   }
 
-  .titles-nav a:hover {
-    color: var(--fg);
+  .titles-nav a:nth-child(7n + 1) { --title-offset: 0%; }
+  .titles-nav a:nth-child(7n + 2) { --title-offset: 15%; }
+  .titles-nav a:nth-child(7n + 3) { --title-offset: 4%; }
+  .titles-nav a:nth-child(7n + 4) { --title-offset: 32%; }
+  .titles-nav a:nth-child(7n + 5) { --title-offset: 12%; }
+  .titles-nav a:nth-child(7n + 6) { --title-offset: 24%; }
+  .titles-nav a:nth-child(7n + 7) { --title-offset: 2%; }
+
+  .titles-nav a:hover,
+  .titles-nav a:focus-visible {
+    color: var(--muted);
+  }
+
+  .titles-nav a:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 6px;
   }
 
   .hero-core {
-    display: grid;
-    grid-template-rows: auto minmax(320px, 1fr) auto;
-    gap: clamp(24px, 4vw, 64px);
+    /* Approved at 1920 × 934: move the list right 287px and down 67px. */
+    padding-inline-start: clamp(0px, 14.9479167vw, 287px);
+    padding-top: clamp(0px, 7.1734476svh, 67px);
     min-width: 0;
-  }
-
-  .hero-title {
-    font-size: clamp(76px, 13.4vw, 226px);
-    line-height: 1.12;
-    letter-spacing: 0.06em;
-    font-weight: 800;
-    text-transform: uppercase;
-    max-width: 6.4ch;
-  }
-
-  .hero-plate {
-    border: 0 !important;
-    min-height: 0;
-    background: transparent !important;
-    overflow: visible;
-    box-shadow: none;
-    position: relative;
-    display: grid;
-    place-items: center;
-    color: var(--fg);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    text-shadow: 0 1px 3px color-mix(in oklch, var(--bg) 85%, transparent);
-  }
-
-  .hero-plate::before {
-    content: none !important;
-  }
-
-  .hero-bottom {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap-lg);
-    align-items: end;
-  }
-
-  .lead {
-    font-size: var(--fs-lead);
-    line-height: 1.25;
-    letter-spacing: -0.04em;
-    max-width: 25ch;
-  }
-
-  /* ── Responsive: 980px ── */
-  @media (max-width: 980px) {
-    .home-stage,
-    .hero-bottom {
-      grid-template-columns: 1fr;
-    }
-
-    .edge-panel {
-      min-height: auto;
-      gap: var(--gap-md);
-    }
-
-    .home-stage {
-      min-height: 0;
-    }
-
-    .topnav-fixed nav {
-      position: static;
-      height: auto;
-      flex-wrap: wrap;
-    }
-
-    .topnav-fixed nav a {
-      height: auto;
-    }
   }
 
   /* ── Responsive: 620px ── */
@@ -266,82 +174,61 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
       --gutter: 20px;
     }
 
-    .hero-title {
-      font-size: clamp(66px, 22vw, 104px);
+    .titles-nav {
+      width: 100%;
+      gap: 20px;
+    }
+
+    .titles-nav a {
+      letter-spacing: 0.04em;
+    }
+    .hero-core {
+      padding-inline-start: 0;
+    }
+
+
+    .home-stage {
+      background-attachment: scroll;
     }
   }
 
-  /* ── Handoff veil: covers the page while /works loads ── */
-  .handoff-veil {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background: var(--bg);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.36s ease 0.04s;
-  }
-
-  .handoff-veil.on {
-    opacity: 1;
-  }
-
-  /* ── Handoff to /works: right-hand title list slides left ── */
   .titles-nav a {
-    transition: transform 0.32s ease, opacity 0.32s ease, color 0.15s ease;
+    transition: color 0.15s ease;
   }
-
-  .titles-nav.is-leaving a {
-    transform: translateX(-90px);
-    opacity: 0;
-  }
-
-  .titles-nav.is-leaving a:nth-child(1) { transition-delay: 0ms; }
-  .titles-nav.is-leaving a:nth-child(2) { transition-delay: 30ms; }
-  .titles-nav.is-leaving a:nth-child(3) { transition-delay: 60ms; }
-  .titles-nav.is-leaving a:nth-child(4) { transition-delay: 90ms; }
-  .titles-nav.is-leaving a:nth-child(5) { transition-delay: 120ms; }
-  .titles-nav.is-leaving a:nth-child(6) { transition-delay: 150ms; }
-  .titles-nav.is-leaving a:nth-child(7) { transition-delay: 180ms; }
-  .titles-nav.is-leaving a:nth-child(8) { transition-delay: 210ms; }
 </style>
 
 <script>
-  // Handoff to /works: the right-hand title list slides left while a solid
-  // veil fades in; navigation happens only once the veil fully covers the
-  // page, so the load gap reads as a continuous transition instead of a
-  // flash of the bare home page. The works index overlay then takes over
-  // with the same titles (see works.astro).
-  const titlesNav = document.querySelector('.titles-nav');
-  const veil = document.querySelector('.handoff-veil');
-  const homeStage = document.querySelector('.home-stage');
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  import { waitForImage } from '../lib/image-crossfade.mjs';
 
-  const withHandoff = (href: string) => {
-    const [path, hash] = href.split('#');
-    return `${path}?from=home${hash ? `#${hash}` : ''}`;
+  const preparedImages = new Map<string, Promise<void>>();
+  let navigationRequest = 0;
+  const prepareImage = (src: string) => {
+    let ready = preparedImages.get(src);
+    if (!ready) {
+      const image = new Image();
+      image.src = src;
+      // A failed preload must not prevent following the link.
+      ready = waitForImage(image).catch(() => {});
+      preparedImages.set(src, ready);
+    }
+    return ready;
   };
 
-  document.querySelectorAll<HTMLAnchorElement>('a[href^="/works"]').forEach((link) => {
-    link.addEventListener('click', (e) => {
-      if (reduceMotion || !titlesNav) return;
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      titlesNav.classList.add('is-leaving');
-      homeStage?.classList.add('is-fading');
-      veil?.classList.add('on');
-      const href = link.getAttribute('href') ?? '/works';
-      setTimeout(() => { window.location.href = withHandoff(href); }, 460);
-    });
-  });
-
-  // Back/forward cache: if the user returns via browser Back, the page is
-  // restored mid-handoff (veil up, hero faded, titles gone) — reset it.
-  window.addEventListener('pageshow', (e) => {
-    if (e.persisted) {
-      titlesNav?.classList.remove('is-leaving');
-      homeStage?.classList.remove('is-fading');
-      veil?.classList.remove('on');
+  document.querySelectorAll<HTMLAnchorElement>('.titles-nav a').forEach(link => {
+    const src = link.dataset.entryImage;
+    if (src) {
+      link.addEventListener('pointerenter', () => { prepareImage(src); });
+      link.addEventListener('focus', () => { prepareImage(src); });
     }
+    link.addEventListener('click', async event => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const request = ++navigationRequest;
+      if (!src) return;
+      event.preventDefault();
+      link.setAttribute('aria-busy', 'true');
+      await prepareImage(src);
+      link.removeAttribute('aria-busy');
+      if (request === navigationRequest) window.location.assign(link.href);
+    });
   });
 </script>
