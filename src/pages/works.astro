@@ -23,8 +23,14 @@ const clientWorks = works.map((w) => ({
   photos: w.photos.map((p) => ({ src: p.src, thumb: p.thumb, caption: p.caption })),
 }));
 
-const firstHasDesc = Boolean(works[0]?.descriptionCn || works[0]?.descriptionEng);
-const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
+interface Props {
+  initialSeries?: number;
+}
+const requestedSeries = Astro.props.initialSeries ?? 0;
+const initialSeries = Number.isInteger(requestedSeries) && requestedSeries >= 0 && requestedSeries < works.length ? requestedSeries : 0;
+const initialWork = works[initialSeries];
+const firstHasDesc = Boolean(initialWork?.descriptionCn || initialWork?.descriptionEng);
+const firstCaption = firstHasDesc ? '' : initialWork?.photos[0]?.caption || `${initialWork?.title ?? ''} — 01`;
 ---
 
 <BaseLayout
@@ -45,13 +51,14 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   <main id="content">
     <section class="works-room" data-od-id="works-room">
       <!-- Stage: one plate, page-centered, toggle right below it -->
-      <div class="stage" class:list={[{ 'show-desc': firstHasDesc }]}>
+      <div class="stage" class:list={[{ 'show-desc': firstHasDesc }]} data-initial-series={initialSeries}>
         <div class="plate-box">
           <div class="plate-layer is-active" data-plate-layer aria-hidden={String(firstHasDesc)}>
             <div class="plate-unit">
               <img
-                src={works[0]?.photos[0]?.src}
-                alt={`${works[0]?.shortTitle} — plate 1`}
+                src={initialWork?.photos[0]?.src}
+                alt={`${initialWork?.shortTitle} — plate 1`}
+                fetchpriority={firstHasDesc ? 'auto' : 'high'}
               />
               <p class="plate-caption">{firstCaption}</p>
             </div>
@@ -79,19 +86,19 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
         <!-- Series description: CN left of the plate, ENG right -->
         <aside
           class="plate-desc plate-desc-cn"
-          class:list={[{ 'is-empty': !works[0]?.descriptionCn }]}
+          class:list={[{ 'is-empty': !initialWork?.descriptionCn }]}
           id="plateDescCn"
           aria-live="polite"
         >
-          <p class="desc-cn" id="descCn">{works[0]?.descriptionCn}</p>
+          <p class="desc-cn" id="descCn">{initialWork?.descriptionCn}</p>
         </aside>
         <aside
           class="plate-desc plate-desc-eng"
-          class:list={[{ 'is-empty': !works[0]?.descriptionEng }]}
+          class:list={[{ 'is-empty': !initialWork?.descriptionEng }]}
           id="plateDescEng"
           aria-live="polite"
         >
-          <p class="desc-eng" id="descEng">{works[0]?.descriptionEng}</p>
+          <p class="desc-eng" id="descEng">{initialWork?.descriptionEng}</p>
         </aside>
       </div>
 
@@ -104,7 +111,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
                 class="series-row"
                 type="button"
                 data-series={String(i)}
-                aria-pressed={i === 0 ? 'true' : 'false'}
+                aria-pressed={i === initialSeries ? 'true' : 'false'}
               >
                 {w.shortTitle}
               </button>
@@ -195,9 +202,9 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   const thumbsOverlay = document.getElementById('thumbsOverlay')!;
   const overlays = [indexOverlay, thumbsOverlay];
 
-  let currentSeries = 0;
+  let currentSeries = Number(stage.getAttribute('data-initial-series')) || 0;
   // -1 = the series' description plate (shown first when _description files exist)
-  let currentPhoto = works[0]?.hasDesc ? -1 : 0;
+  let currentPhoto = works[currentSeries]?.hasDesc ? -1 : 0;
   let activeLayerIndex = 0;
 
   function clearPlateOpacity() {
@@ -324,7 +331,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
     currentSeries = series;
     currentPhoto = photo;
     render();
-    history.replaceState(null, '', `#${series}`);
+    history.replaceState(null, '', `/works/${series}`);
   }
 
   // Photo cycle per series: optional description plate, then plates 1..n
@@ -370,6 +377,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   modeToggle.addEventListener('click', () => {
     openOverlay(indexOverlay.classList.contains('open') ? thumbsOverlay : indexOverlay);
   });
+
   document.getElementById('indexClose')!.addEventListener('click', closeOverlays);
   document.getElementById('thumbsClose')!.addEventListener('click', closeOverlays);
   overlays.forEach((o) => o.addEventListener('click', (e) => { if (e.target === o) closeOverlays(); }));
@@ -464,6 +472,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
 
   // Deep link (e.g. from the home page index): land on the description
   // plate first when the series has one
+  const searchParams = new URLSearchParams(location.search);
   const hashIndex = parseInt(location.hash.slice(1), 10);
   if (hashIndex >= 0 && hashIndex < works.length) {
     goTo(hashIndex, works[hashIndex].hasDesc ? -1 : 0);
@@ -472,7 +481,7 @@ const firstCaption = firstHasDesc ? '' : `${works[0]?.title ?? ''} — 01`;
   // Arriving from home: the inline script already opened the overlay
   // pre-paint; here we only strip the param and clean up the one-shot
   // transition classes after the rows have slid in.
-  if (new URLSearchParams(location.search).get('from') === 'home') {
+  if (searchParams.get('from') === 'home') {
     setTimeout(() => indexOverlay.classList.remove('is-entering', 'is-instant'), 1000);
     history.replaceState(null, '', `${location.pathname}${location.hash}`);
   }

@@ -1,0 +1,15 @@
+---
+import WorksPage from '../works.astro';
+import { getWorks } from '../../data/works';
+
+export function getStaticPaths() {
+  return getWorks().map((_, initialSeries) => ({
+    params: { series: String(initialSeries) },
+    props: { initialSeries },
+  }));
+}
+
+const { initialSeries } = Astro.props;
+---
+
+<WorksPage initialSeries={initialSeries} />
