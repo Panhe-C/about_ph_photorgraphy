@@ -17,7 +17,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     <div class="topnav-fixed-inner">
       <nav aria-label="Primary navigation">
         <a href="/" class="nav-home" aria-current="page">HOME</a>
-        <a href="/works" class="nav-work">WORK</a>
+        <a href="/works?index" class="nav-work">WORK</a>
         <a href="/about" class="nav-about">ABOUT</a>
       </nav>
     </div>
@@ -240,17 +240,12 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
   // Handoff to /works: the project titles slide left while a solid
   // veil fades in; navigation happens only once the veil fully covers the
   // page, so the load gap reads as a continuous transition instead of a
-  // flash of the bare home page. The works index overlay then takes over
-  // with the same titles (see works.astro).
+  // flash of the bare home page. Keep the destination intact: project
+  // links open their series directly; only WORK requests the index.
   const titlesNav = document.querySelector('.titles-nav');
   const veil = document.querySelector('.handoff-veil');
   const homeStage = document.querySelector('.home-stage');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const withHandoff = (href: string) => {
-    const [path, hash] = href.split('#');
-    return `${path}?from=home${hash ? `#${hash}` : ''}`;
-  };
 
   document.querySelectorAll<HTMLAnchorElement>('a[href^="/works"]').forEach((link) => {
     link.addEventListener('click', (e) => {
@@ -261,7 +256,7 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
       homeStage?.classList.add('is-fading');
       veil?.classList.add('on');
       const href = link.getAttribute('href') ?? '/works';
-      setTimeout(() => { window.location.href = withHandoff(href); }, 460);
+      setTimeout(() => { window.location.href = href; }, 460);
     });
   });
 
