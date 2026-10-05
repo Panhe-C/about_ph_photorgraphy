@@ -126,7 +126,8 @@ const firstCaption = firstHasDesc ? '' : initialWork?.photos[0]?.caption || `${i
         // from home, the index overlay must be fully open in the very first
         // frame — the page module runs too late (post-paint), which is what
         // let a bare works page flash through mid-handoff.
-        if (new URLSearchParams(location.search).get('from') === 'home') {
+        if (new URLSearchParams(location.search).get('from') === 'home'
+            || new URLSearchParams(location.search).has('index')) {
           var ovl = document.getElementById('indexOverlay');
           ovl.classList.add('open', 'is-instant');
           ovl.setAttribute('aria-hidden', 'false');
@@ -378,6 +379,12 @@ const firstCaption = firstHasDesc ? '' : initialWork?.photos[0]?.caption || `${i
     openOverlay(indexOverlay.classList.contains('open') ? thumbsOverlay : indexOverlay);
   });
 
+  // Clicking WORK while already on /works: reopen the series index instead
+  // of reloading the page into the first series' description plate
+  document.querySelector('.nav-work')!.addEventListener('click', (e) => {
+    e.preventDefault();
+    openOverlay(indexOverlay);
+  });
   document.getElementById('indexClose')!.addEventListener('click', closeOverlays);
   document.getElementById('thumbsClose')!.addEventListener('click', closeOverlays);
   overlays.forEach((o) => o.addEventListener('click', (e) => { if (e.target === o) closeOverlays(); }));
@@ -478,10 +485,10 @@ const firstCaption = firstHasDesc ? '' : initialWork?.photos[0]?.caption || `${i
     goTo(hashIndex, works[hashIndex].hasDesc ? -1 : 0);
   }
 
-  // Arriving from home: the inline script already opened the overlay
-  // pre-paint; here we only strip the param and clean up the one-shot
-  // transition classes after the rows have slid in.
-  if (searchParams.get('from') === 'home') {
+  // Arriving from home (or via ?index): the inline script already opened
+  // the overlay pre-paint; here we only strip the param and clean up the
+  // one-shot transition classes after the rows have slid in.
+  if (searchParams.get('from') === 'home' || searchParams.has('index')) {
     setTimeout(() => indexOverlay.classList.remove('is-entering', 'is-instant'), 1000);
     history.replaceState(null, '', `${location.pathname}${location.hash}`);
   }
