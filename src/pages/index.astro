@@ -18,7 +18,6 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
       <nav aria-label="Primary navigation">
         <a href="/" class="nav-home" aria-current="page">HOME</a>
         <a href="/works?index" class="nav-work">WORK</a>
-        <a href="/about" class="nav-about">ABOUT</a>
       </nav>
     </div>
   </header>
@@ -162,10 +161,10 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
   }
 
   .hero-core {
+    min-width: 0;
     /* Approved at 1920 × 934: move the list right 287px and down 67px. */
     padding-inline-start: clamp(0px, 14.9479167vw, 287px);
     padding-top: clamp(0px, 7.1734476svh, 67px);
-    min-width: 0;
   }
 
   /* ── Responsive: 620px ── */
@@ -182,10 +181,10 @@ const heroImage = optimizedVariantUrl('/images/HOME.jpg', HERO_WIDTH);
     .titles-nav a {
       letter-spacing: 0.04em;
     }
+
     .hero-core {
       padding-inline-start: 0;
     }
-
 
     .home-stage {
       background-attachment: scroll;
